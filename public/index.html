@@ -50,8 +50,8 @@
 
       <main class="flex-1 flex flex-col items-center justify-center px-5 sm:px-8 pb-16 pt-4">
         <!-- Cookie stage -->
-        <div id="cookie-stage" class="relative w-full max-w-md flex items-center justify-center mb-10 sm:mb-12">
-          <div id="cookie-wrap" class="cookie-wrap relative w-48 h-32 sm:w-56 sm:h-36">
+        <div id="cookie-stage" class="relative z-0 w-full max-w-md flex items-center justify-center mb-10 sm:mb-12 pointer-events-none">
+          <div id="cookie-wrap" class="cookie-wrap relative w-48 h-32 sm:w-56 sm:h-36 pointer-events-auto">
             <svg
               id="cookie-whole"
               class="cookie-svg absolute inset-0 w-full h-full"
@@ -131,7 +131,7 @@
         </div>
 
         <!-- Stage 1: form -->
-        <section id="stage-form" class="w-full max-w-md space-y-8">
+        <section id="stage-form" class="relative z-20 w-full max-w-md space-y-8">
           <div class="space-y-6">
             <label class="block">
               <span class="sr-only">Ваше имя</span>
@@ -184,7 +184,7 @@
           <button
             id="btn-pay"
             type="button"
-            class="btn-gold w-full py-4 px-6 text-sm sm:text-[15px] font-medium tracking-wide text-ink bg-sand hover:bg-sand-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            class="btn-gold relative z-20 w-full py-4 px-6 text-sm sm:text-[15px] font-medium tracking-wide text-ink bg-sand hover:bg-sand-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Раскусить за 29 ₽ через T-Pay
           </button>
@@ -203,7 +203,7 @@
         </section>
 
         <!-- Stage 3: after fortune -->
-        <section id="stage-again" class="hidden w-full max-w-md mt-10 sm:mt-14">
+        <section id="stage-again" class="hidden relative z-20 w-full max-w-md mt-10 sm:mt-14">
           <button
             id="btn-again"
             type="button"

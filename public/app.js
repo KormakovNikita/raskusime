@@ -17,6 +17,8 @@
   let selectedGender = '';
   let pollTimer = null;
   let activeOrderId = null;
+  /** Bumped to ignore stale async payment/poll results after reset or a newer flow. */
+  let flowGeneration = 0;
 
   document.querySelectorAll('.gender-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -34,6 +36,10 @@
   function clearError() {
     formError.textContent = '';
     formError.classList.add('hidden');
+  }
+
+  function clearPaymentParams() {
+    history.replaceState({}, '', '/');
   }
 
   function setStage(stage) {
@@ -74,6 +80,7 @@
     $('fortune-block-2').textContent = b2;
     $('fortune-block-3').textContent = b3;
 
+    clearPaymentParams();
     setStage('fortune');
     cookieWrap.classList.add('is-cracking');
 
@@ -97,47 +104,63 @@
     return { res, data };
   }
 
-  async function pollUntilPaid(orderId, { maxAttempts = 40, intervalMs = 1500 } = {}) {
+  function pollUntilPaid(orderId, generation, { maxAttempts = 40, intervalMs = 1500 } = {}) {
     loaderText.textContent = 'Проверяем транзакцию...';
     setStage('loader');
 
     let attempts = 0;
+    let inFlight = false;
 
     return new Promise((resolve, reject) => {
+      let settled = false;
+
+      const finish = (fn, value) => {
+        if (settled) return;
+        settled = true;
+        stopPolling();
+        fn(value);
+      };
+
       const tick = async () => {
+        if (settled || generation !== flowGeneration || inFlight) return;
         attempts += 1;
+        inFlight = true;
+
         try {
           const { res, data } = await fetchFortune(orderId);
 
+          if (settled || generation !== flowGeneration) return;
+
           if (res.ok && data.success && data.fortune) {
-            stopPolling();
-            resolve(data.fortune);
+            finish(resolve, data.fortune);
             return;
           }
 
           if (res.status === 404) {
-            stopPolling();
-            reject(new Error(data.error || 'Заказ не найден.'));
+            finish(reject, new Error(data.error || 'Заказ не найден или уже использован.'));
             return;
           }
 
           if (res.status !== 403 && !res.ok) {
-            stopPolling();
-            reject(new Error(data.error || 'Ошибка при получении предсказания.'));
+            finish(reject, new Error(data.error || 'Ошибка при получении предсказания.'));
             return;
           }
 
           if (attempts >= maxAttempts) {
-            stopPolling();
-            reject(new Error('Оплата не подтверждена вовремя. Если средства списались, напишите в поддержку.'));
-            return;
+            finish(
+              reject,
+              new Error(
+                'Оплата не подтверждена вовремя. Если средства списались, напишите в поддержку.'
+              )
+            );
           }
-        } catch (err) {
+        } catch {
+          if (settled || generation !== flowGeneration) return;
           if (attempts >= maxAttempts) {
-            stopPolling();
-            reject(new Error('Сеть недоступна. Проверьте соединение и попробуйте снова.'));
-            return;
+            finish(reject, new Error('Сеть недоступна. Проверьте соединение и попробуйте снова.'));
           }
+        } finally {
+          inFlight = false;
         }
       };
 
@@ -148,6 +171,7 @@
 
   async function startPayment() {
     clearError();
+    const generation = ++flowGeneration;
     btnPay.disabled = true;
     loaderText.textContent = 'Создаём платёж...';
     setStage('loader');
@@ -167,6 +191,8 @@
 
       const data = await res.json().catch(() => ({}));
 
+      if (generation !== flowGeneration) return;
+
       if (!res.ok || !data.success || !data.PaymentURL) {
         throw new Error(data.error || 'Не удалось создать платёж.');
       }
@@ -177,6 +203,7 @@
       loaderText.textContent = 'Проверяем транзакцию...';
       window.location.href = data.PaymentURL;
     } catch (err) {
+      if (generation !== flowGeneration) return;
       setStage('form');
       showError(err.message || 'Ошибка сети. Попробуйте позже.');
       btnPay.disabled = false;
@@ -184,34 +211,54 @@
   }
 
   async function resumeAfterPayment(orderId) {
+    const generation = ++flowGeneration;
     activeOrderId = orderId;
     sessionStorage.removeItem('raskusi_orderId');
 
     try {
-      const fortune = await pollUntilPaid(orderId);
+      const fortune = await pollUntilPaid(orderId, generation);
+      if (generation !== flowGeneration) return;
       playCrackAndShow(fortune);
     } catch (err) {
+      if (generation !== flowGeneration) return;
+      // Spent/unknown order in URL — quietly return to a clean form
+      clearPaymentParams();
       setStage('form');
-      showError(err.message || 'Не удалось получить предсказание.');
       btnPay.disabled = false;
+      const msg = err?.message || '';
+      if (/не найден|уже использован/i.test(msg)) {
+        clearError();
+        return;
+      }
+      showError(msg || 'Не удалось получить предсказание.');
     }
   }
 
   function resetToForm() {
+    flowGeneration += 1;
     stopPolling();
     activeOrderId = null;
     selectedGender = '';
     document.querySelectorAll('.gender-btn').forEach((b) => b.classList.remove('is-active'));
     inputName.value = '';
     inputQuestion.value = '';
+    sessionStorage.removeItem('raskusi_orderId');
     clearError();
     btnPay.disabled = false;
-    history.replaceState({}, '', '/');
+    clearPaymentParams();
     setStage('form');
   }
 
-  btnPay.addEventListener('click', startPayment);
-  btnAgain.addEventListener('click', resetToForm);
+  btnPay.addEventListener('click', (event) => {
+    event.preventDefault();
+    if (btnPay.disabled) return;
+    startPayment();
+  });
+
+  btnAgain.addEventListener('click', (event) => {
+    event.preventDefault();
+    resetToForm();
+  });
 
   async function init() {
     try {
@@ -229,8 +276,9 @@
     const stored = sessionStorage.getItem('raskusi_orderId');
 
     if (status === 'fail') {
+      sessionStorage.removeItem('raskusi_orderId');
       showError('Оплата не завершена. Вы можете попробовать снова.');
-      history.replaceState({}, '', '/');
+      clearPaymentParams();
       return;
     }
 
