@@ -17,6 +17,7 @@
   const btnRetry = $('btn-retry');
   const inputName = $('input-name');
   const inputEmail = $('input-email');
+  const inputConsentPd = $('input-consent-pd');
   const inputQuestion = $('input-question');
   const inputRetryQuestion = $('input-retry-question');
   const atmosphere = document.querySelector('.atmosphere');
@@ -342,6 +343,12 @@
       return;
     }
 
+    if (!inputConsentPd?.checked) {
+      showError('Для оплаты необходимо согласие на обработку персональных данных.');
+      inputConsentPd?.focus();
+      return;
+    }
+
     const generation = ++flowGeneration;
     btnPay.disabled = true;
     loaderText.textContent = 'Создаём платёж...';
@@ -478,6 +485,7 @@
     selectedGender = '';
     document.querySelectorAll('.gender-btn').forEach((b) => b.classList.remove('is-active'));
     inputName.value = '';
+    if (inputConsentPd) inputConsentPd.checked = false;
     inputQuestion.value = '';
     inputRetryQuestion.value = '';
     sessionStorage.removeItem('raskusi_orderId');

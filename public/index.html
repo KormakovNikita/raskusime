@@ -423,6 +423,20 @@
             />
           </label>
 
+          <label class="consent-row" for="input-consent-pd">
+            <input
+              id="input-consent-pd"
+              type="checkbox"
+              name="consentPersonalization"
+              class="consent-checkbox"
+              required
+            />
+            <span class="consent-text">
+              Я даю согласие на обработку персональных данных для персонализации результата и их
+              передачу указанному в согласии провайдеру языковой модели.
+            </span>
+          </label>
+
           <button
             id="btn-pay"
             type="button"
@@ -430,6 +444,12 @@
           >
             Раскусить за 29 ₽ через T-Pay
           </button>
+
+          <p class="pay-legal-note">
+            Нажимая «Оплатить 29&nbsp;₽», вы принимаете условия
+            <a href="/offer.html">Публичной оферты</a> и подтверждаете ознакомление с
+            <a href="/privacy.html">Политикой обработки персональных данных</a>.
+          </p>
 
           <p id="demo-hint" class="hidden text-center text-[11px] text-white/25 tracking-wide">
             Демо-режим: оплата симулируется без реального списания

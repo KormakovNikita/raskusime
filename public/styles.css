@@ -612,6 +612,58 @@ textarea.field-line {
   }
 }
 
+/* --- Pay form consent --- */
+
+.consent-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  cursor: pointer;
+}
+
+.consent-checkbox {
+  margin-top: 0.15rem;
+  width: 0.95rem;
+  height: 0.95rem;
+  flex-shrink: 0;
+  accent-color: #d4c4a8;
+  cursor: pointer;
+}
+
+.consent-text {
+  font-size: 0.68rem;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.42);
+}
+
+.consent-text a {
+  color: rgba(212, 196, 168, 0.85);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.consent-text a:hover {
+  color: #f3efe6;
+}
+
+.pay-legal-note {
+  margin: 0;
+  text-align: center;
+  font-size: 0.62rem;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.28);
+}
+
+.pay-legal-note a {
+  color: rgba(255, 255, 255, 0.42);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.pay-legal-note a:hover {
+  color: rgba(212, 196, 168, 0.9);
+}
+
 /* --- Hero / SEO / legal --- */
 
 .hero-brand {
