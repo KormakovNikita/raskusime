@@ -340,6 +340,30 @@
             Получить еще одно предсказание
           </button>
         </section>
+
+        <section id="stage-retry" class="hidden relative z-20 w-full max-w-md mx-auto mt-8 sm:mt-10 space-y-5 stage-panel">
+          <p class="text-center text-sm text-white/45 leading-relaxed">
+            Оплата сохранена. Переформулируйте вопрос — новое предсказание без повторной оплаты.
+          </p>
+          <label class="block">
+            <span class="sr-only">Новый вопрос</span>
+            <textarea
+              id="input-retry-question"
+              rows="3"
+              maxlength="500"
+              placeholder="Сформулируйте вопрос иначе..."
+              class="field-line w-full bg-transparent border border-white/15 focus:border-sand outline-none px-0 py-3 text-sm text-white/90 placeholder:text-white/30 transition-colors resize-none leading-relaxed"
+            ></textarea>
+          </label>
+          <p id="retry-error" class="hidden text-sm text-red-300/90 text-center" role="alert"></p>
+          <button
+            id="btn-retry"
+            type="button"
+            class="btn-gold w-full py-3.5 px-6 text-sm font-medium tracking-wide text-ink bg-sand hover:bg-sand-light disabled:opacity-50"
+          >
+            Спросить снова
+          </button>
+        </section>
       </main>
 
       <footer class="px-5 sm:px-8 py-6 text-center text-[10px] sm:text-[11px] text-white/20 tracking-wide">

@@ -4,22 +4,28 @@
   const stageForm = $('stage-form');
   const stageLoader = $('stage-loader');
   const stageAgain = $('stage-again');
+  const stageRetry = $('stage-retry');
   const loaderText = $('loader-text');
   const formError = $('form-error');
+  const retryError = $('retry-error');
   const demoHint = $('demo-hint');
   const cookieStage = $('cookie-stage');
   const cookieWrap = $('cookie-wrap');
   const fortuneSlip = $('fortune-slip');
   const btnPay = $('btn-pay');
   const btnAgain = $('btn-again');
+  const btnRetry = $('btn-retry');
   const inputName = $('input-name');
   const inputQuestion = $('input-question');
+  const inputRetryQuestion = $('input-retry-question');
+  const atmosphere = document.querySelector('.atmosphere');
 
   let selectedGender = '';
   let pollTimer = null;
   let activeOrderId = null;
-  /** Bumped to ignore stale async payment/poll results after reset or a newer flow. */
+  let retryOrderId = null;
   let flowGeneration = 0;
+  let crackTimers = [];
 
   document.querySelectorAll('.gender-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -28,6 +34,20 @@
       btn.classList.add('is-active');
     });
   });
+
+  // Soft parallax for atmosphere
+  if (atmosphere && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    window.addEventListener(
+      'pointermove',
+      (event) => {
+        const x = (event.clientX / window.innerWidth - 0.5) * 18;
+        const y = (event.clientY / window.innerHeight - 0.5) * 14;
+        atmosphere.style.setProperty('--parallax-x', `${x.toFixed(1)}px`);
+        atmosphere.style.setProperty('--parallax-y', `${y.toFixed(1)}px`);
+      },
+      { passive: true }
+    );
+  }
 
   function showError(message) {
     formError.textContent = message;
@@ -39,8 +59,43 @@
     formError.classList.add('hidden');
   }
 
+  function showRetryError(message) {
+    retryError.textContent = message;
+    retryError.classList.remove('hidden');
+  }
+
+  function clearRetryError() {
+    retryError.textContent = '';
+    retryError.classList.add('hidden');
+  }
+
   function clearPaymentParams() {
     history.replaceState({}, '', '/');
+  }
+
+  function clearCrackTimers() {
+    crackTimers.forEach((id) => window.clearTimeout(id));
+    crackTimers = [];
+  }
+
+  function later(ms, fn) {
+    const id = window.setTimeout(fn, ms);
+    crackTimers.push(id);
+    return id;
+  }
+
+  function resetSlipHidden() {
+    fortuneSlip.classList.remove('is-visible', 'relative', 'w-full', 'is-centered-reveal');
+    fortuneSlip.classList.add(
+      'absolute',
+      'left-1/2',
+      'top-1/2',
+      '-translate-x-1/2',
+      '-translate-y-1/2',
+      'opacity-0',
+      'pointer-events-none'
+    );
+    fortuneSlip.style.opacity = '';
   }
 
   function setStage(stage) {
@@ -48,28 +103,17 @@
     stageLoader.classList.toggle('hidden', stage !== 'loader');
     stageLoader.classList.toggle('flex', stage === 'loader');
     stageAgain.classList.toggle('hidden', stage !== 'fortune');
+    stageRetry.classList.toggle('hidden', stage !== 'retry');
 
     if (stage === 'form') {
-      cookieWrap.classList.remove('is-cracking');
+      clearCrackTimers();
+      cookieWrap.classList.remove('is-cracking', 'is-revealed', 'is-impact');
       cookieStage.classList.remove('is-fortune');
       clearCrumbs();
-      fortuneSlip.classList.remove('is-visible', 'relative', 'w-full');
-      fortuneSlip.classList.add(
-        'absolute',
-        'left-1/2',
-        'top-1/2',
-        '-translate-x-1/2',
-        '-translate-y-1/2',
-        'opacity-0',
-        'pointer-events-none'
-      );
+      resetSlipHidden();
       ['fortune-block-1', 'fortune-block-2', 'fortune-block-3'].forEach((id) => {
         $(id).textContent = '';
       });
-    }
-
-    if (stage === 'fortune') {
-      cookieStage.classList.add('is-fortune');
     }
   }
 
@@ -90,28 +134,32 @@
     return ['Предсказание временно недоступно.', 'Попробуйте ещё раз чуть позже.', ''];
   }
 
+  function isRefusalText(text) {
+    return /печенье не может ответить/i.test(String(text || ''));
+  }
+
   function spawnCrumbs() {
     const layer = $('crumb-layer');
     if (!layer) return;
     layer.innerHTML = '';
 
-    const count = 12;
+    const count = 16;
     for (let i = 0; i < count; i += 1) {
       const crumb = document.createElement('span');
       crumb.className = 'crumb';
-      const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.4;
-      const dist = 40 + Math.random() * 70;
+      const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.5;
+      const dist = 50 + Math.random() * 90;
       const dx = Math.cos(angle) * dist;
-      const dy = Math.sin(angle) * dist * 0.7 + 20 + Math.random() * 30;
-      const rot = `${(Math.random() * 240 - 120).toFixed(0)}deg`;
-      const size = 4 + Math.random() * 5;
+      const dy = Math.sin(angle) * dist * 0.75 + 24 + Math.random() * 36;
+      const rot = `${(Math.random() * 260 - 130).toFixed(0)}deg`;
+      const size = 4 + Math.random() * 6;
       crumb.style.setProperty('--dx', `${dx.toFixed(1)}px`);
       crumb.style.setProperty('--dy', `${dy.toFixed(1)}px`);
       crumb.style.setProperty('--rot', rot);
       crumb.style.width = `${size}px`;
-      crumb.style.height = `${size * 0.8}px`;
-      crumb.style.animationDelay = `${0.28 + Math.random() * 0.18}s`;
-      crumb.style.background = i % 2 === 0 ? '#d4bc8e' : '#a88955';
+      crumb.style.height = `${size * 0.85}px`;
+      crumb.style.animationDelay = `${0.32 + Math.random() * 0.22}s`;
+      crumb.style.background = i % 3 === 0 ? '#e2c994' : i % 2 === 0 ? '#d4bc8e' : '#a88955';
       layer.appendChild(crumb);
     }
   }
@@ -121,31 +169,71 @@
     if (layer) layer.innerHTML = '';
   }
 
-  function playCrackAndShow(fortuneText) {
-    const [b1, b2, b3] = parseFortuneBlocks(fortuneText);
+  /**
+   * Crack first (cookie stays fixed size, slip stays hidden),
+   * then reveal slip between halves, then expand layout.
+   */
+  function playCrackAndShow(fortuneText, { canRetry = false, orderId = null } = {}) {
+    clearCrackTimers();
+    clearPaymentParams();
+
+    const refusal = canRetry || isRefusalText(fortuneText);
+    const [b1, b2, b3] = refusal
+      ? [fortuneText.replace(/\[БЛОК\s*\d+[^\]]*\]/gi, '').trim(), '', '']
+      : parseFortuneBlocks(fortuneText);
+
     $('fortune-block-1').textContent = b1;
     $('fortune-block-2').textContent = b2;
     $('fortune-block-3').textContent = b3;
 
-    clearPaymentParams();
-    setStage('fortune');
+    // Keep cookie theater visible; hide pay form / loader
+    stageForm.classList.add('hidden');
+    stageLoader.classList.add('hidden');
+    stageLoader.classList.remove('flex');
+    stageAgain.classList.add('hidden');
+    stageRetry.classList.add('hidden');
+
+    resetSlipHidden();
+    cookieWrap.classList.remove('is-revealed');
+    cookieStage.classList.remove('is-fortune');
+
     spawnCrumbs();
-    cookieWrap.classList.add('is-cracking');
+    cookieWrap.classList.add('is-cracking', 'is-impact');
 
-    fortuneSlip.classList.remove(
-      'absolute',
-      'left-1/2',
-      'top-1/2',
-      '-translate-x-1/2',
-      '-translate-y-1/2',
-      'opacity-0',
-      'pointer-events-none'
-    );
-    fortuneSlip.classList.add('relative', 'w-full');
+    // 1) Let halves split (~1.2s)
+    later(1180, () => {
+      // 2) Reveal slip still absolutely centered between halves
+      fortuneSlip.classList.remove('opacity-0');
+      fortuneSlip.classList.add('is-visible', 'is-centered-reveal');
+    });
 
-    window.setTimeout(() => {
-      fortuneSlip.classList.add('is-visible');
-    }, 620);
+    // 3) Settle into document flow + actions
+    later(1750, () => {
+      cookieWrap.classList.add('is-revealed');
+      cookieStage.classList.add('is-fortune');
+      fortuneSlip.classList.remove(
+        'absolute',
+        'left-1/2',
+        'top-1/2',
+        '-translate-x-1/2',
+        '-translate-y-1/2',
+        'is-centered-reveal'
+      );
+      fortuneSlip.classList.add('relative', 'w-full');
+      cookieWrap.classList.remove('is-impact');
+
+      if (refusal && orderId) {
+        retryOrderId = orderId;
+        sessionStorage.setItem('raskusi_retryOrderId', orderId);
+        inputRetryQuestion.value = '';
+        clearRetryError();
+        stageRetry.classList.remove('hidden');
+      } else {
+        retryOrderId = null;
+        sessionStorage.removeItem('raskusi_retryOrderId');
+        stageAgain.classList.remove('hidden');
+      }
+    });
   }
 
   function stopPolling() {
@@ -193,7 +281,7 @@
           if (settled || generation !== flowGeneration) return;
 
           if (res.ok && data.success && data.fortune) {
-            finish(resolve, data.fortune);
+            finish(resolve, data);
             return;
           }
 
@@ -284,12 +372,14 @@
     loaderText.textContent = 'Готовим предсказание...';
 
     try {
-      const fortune = await pollUntilPaid(orderId, generation);
+      const data = await pollUntilPaid(orderId, generation);
       if (generation !== flowGeneration) return;
-      playCrackAndShow(fortune);
+      playCrackAndShow(data.fortune, {
+        canRetry: Boolean(data.canRetry),
+        orderId: data.orderId || orderId,
+      });
     } catch (err) {
       if (generation !== flowGeneration) return;
-      // Spent/unknown order in URL — quietly return to a clean form
       clearPaymentParams();
       setStage('form');
       btnPay.disabled = false;
@@ -302,16 +392,79 @@
     }
   }
 
+  async function retryFortune() {
+    clearRetryError();
+    const orderId = retryOrderId || sessionStorage.getItem('raskusi_retryOrderId');
+    if (!orderId) {
+      showRetryError('Сессия повтора истекла. Оформите новое предсказание.');
+      return;
+    }
+
+    const question = inputRetryQuestion.value.trim();
+    if (!question) {
+      showRetryError('Введите новый вопрос.');
+      return;
+    }
+
+    const generation = ++flowGeneration;
+    btnRetry.disabled = true;
+    loaderText.textContent = 'Готовим предсказание...';
+    setStage('loader');
+
+    try {
+      const res = await fetch('/api/retry-fortune', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({
+          orderId,
+          name: inputName.value.trim(),
+          gender: selectedGender,
+          question,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+
+      if (generation !== flowGeneration) return;
+
+      if (!res.ok || !data.success || !data.fortune) {
+        throw new Error(data.error || 'Не удалось получить предсказание.');
+      }
+
+      // Reset cookie visuals for a fresh crack
+      cookieWrap.classList.remove('is-cracking', 'is-revealed', 'is-impact');
+      clearCrumbs();
+      resetSlipHidden();
+
+      playCrackAndShow(data.fortune, {
+        canRetry: Boolean(data.canRetry),
+        orderId: data.orderId || orderId,
+      });
+    } catch (err) {
+      if (generation !== flowGeneration) return;
+      stageRetry.classList.remove('hidden');
+      stageLoader.classList.add('hidden');
+      stageLoader.classList.remove('flex');
+      showRetryError(err.message || 'Ошибка сети. Попробуйте снова.');
+    } finally {
+      btnRetry.disabled = false;
+    }
+  }
+
   function resetToForm() {
     flowGeneration += 1;
     stopPolling();
+    clearCrackTimers();
     activeOrderId = null;
+    retryOrderId = null;
     selectedGender = '';
     document.querySelectorAll('.gender-btn').forEach((b) => b.classList.remove('is-active'));
     inputName.value = '';
     inputQuestion.value = '';
+    inputRetryQuestion.value = '';
     sessionStorage.removeItem('raskusi_orderId');
+    sessionStorage.removeItem('raskusi_retryOrderId');
     clearError();
+    clearRetryError();
     btnPay.disabled = false;
     clearPaymentParams();
     setStage('form');
@@ -326,6 +479,12 @@
   btnAgain.addEventListener('click', (event) => {
     event.preventDefault();
     resetToForm();
+  });
+
+  btnRetry.addEventListener('click', (event) => {
+    event.preventDefault();
+    if (btnRetry.disabled) return;
+    retryFortune();
   });
 
   async function init() {

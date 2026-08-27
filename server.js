@@ -146,6 +146,19 @@ function personalizeFallback({ name, gender, question }) {
   return [block1, base.block2, base.block3].join('\n\n');
 }
 
+const REFUSAL_SNIPPET = 'печенье не может ответить';
+
+function isRefusalFortune(text) {
+  return typeof text === 'string' && text.toLowerCase().includes(REFUSAL_SNIPPET);
+}
+
+function normalizeFormInput(body = {}) {
+  const name = typeof body.name === 'string' ? body.name.trim().slice(0, 80) : '';
+  const gender = body.gender === 'm' || body.gender === 'f' ? body.gender : '';
+  const question = typeof body.question === 'string' ? body.question.trim().slice(0, 500) : '';
+  return { name, gender, question };
+}
+
 async function generateFortune(userData) {
   if (!AI_ENABLED) {
     console.warn('OPENAI_API_KEY is missing — using local fallback fortune');
@@ -197,11 +210,7 @@ async function generateFortune(userData) {
 
 app.post('/api/create-payment', async (req, res) => {
   try {
-    const name = typeof req.body?.name === 'string' ? req.body.name.trim().slice(0, 80) : '';
-    const gender = req.body?.gender === 'm' || req.body?.gender === 'f' ? req.body.gender : '';
-    const question =
-      typeof req.body?.question === 'string' ? req.body.question.trim().slice(0, 500) : '';
-
+    const { name, gender, question } = normalizeFormInput(req.body);
     const orderId = `raskusi-${Date.now()}-${uuidv4().slice(0, 8)}`;
 
     orders.set(orderId, {
@@ -366,15 +375,91 @@ app.get('/api/get-fortune', async (req, res) => {
       question: order.question,
     });
 
+    if (isRefusalFortune(result.text)) {
+      order.status = 'retry';
+      orders.set(orderId, order);
+      return res.json({
+        success: true,
+        fortune: result.text,
+        source: result.source,
+        canRetry: true,
+        orderId,
+      });
+    }
+
     orders.delete(orderId);
 
     return res.json({
       success: true,
       fortune: result.text,
       source: result.source,
+      canRetry: false,
+      orderId,
     });
   } catch (err) {
     console.error('get-fortune error:', err);
+    return res.status(500).json({
+      success: false,
+      error: 'Не удалось получить предсказание. Попробуйте позже.',
+    });
+  }
+});
+
+/** Free re-ask after paid refusal — no second charge */
+app.post('/api/retry-fortune', async (req, res) => {
+  try {
+    const orderId = typeof req.body?.orderId === 'string' ? req.body.orderId : '';
+    if (!orderId || !orders.has(orderId)) {
+      return res.status(404).json({
+        success: false,
+        error: 'Повтор недоступен. Оформите новое предсказание.',
+      });
+    }
+
+    const order = orders.get(orderId);
+    if (order.status !== 'retry') {
+      return res.status(403).json({
+        success: false,
+        error: 'Повторный вопрос без оплаты недоступен для этого заказа.',
+      });
+    }
+
+    const next = normalizeFormInput(req.body);
+    if (next.name) order.name = next.name;
+    if (next.gender) order.gender = next.gender;
+    order.question = next.question;
+    order.status = 'paid';
+    orders.set(orderId, order);
+
+    const result = await generateFortune({
+      name: order.name,
+      gender: order.gender,
+      question: order.question,
+    });
+
+    if (isRefusalFortune(result.text)) {
+      order.status = 'retry';
+      orders.set(orderId, order);
+      return res.json({
+        success: true,
+        fortune: result.text,
+        source: result.source,
+        canRetry: true,
+        orderId,
+      });
+    }
+
+    orders.delete(orderId);
+
+    return res.json({
+      success: true,
+      fortune: result.text,
+      source: result.source,
+      canRetry: false,
+      orderId,
+    });
+  } catch (err) {
+    console.error('retry-fortune error:', err);
     return res.status(500).json({
       success: false,
       error: 'Не удалось получить предсказание. Попробуйте позже.',

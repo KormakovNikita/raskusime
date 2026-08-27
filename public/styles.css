@@ -29,6 +29,10 @@ body {
     radial-gradient(1200px 600px at 50% -10%, rgba(196, 165, 116, 0.12), transparent 55%),
     radial-gradient(800px 500px at 80% 90%, rgba(138, 115, 80, 0.08), transparent 50%),
     linear-gradient(180deg, #161616 0%, #121212 45%, #101010 100%);
+  --parallax-x: 0px;
+  --parallax-y: 0px;
+  transform: translate(calc(var(--parallax-x) * 0.35), calc(var(--parallax-y) * 0.35));
+  transition: transform 0.45s ease-out;
 }
 
 .orb {
@@ -159,6 +163,27 @@ textarea.field-line {
   animation: panel-in 0.55s ease both;
 }
 
+#stage-form .space-y-6 > * {
+  animation: panel-in 0.6s ease both;
+}
+
+#stage-form .space-y-6 > *:nth-child(1) {
+  animation-delay: 0.05s;
+}
+
+#stage-form .space-y-6 > *:nth-child(2) {
+  animation-delay: 0.12s;
+}
+
+#stage-form .space-y-6 > *:nth-child(3) {
+  animation-delay: 0.2s;
+}
+
+#stage-form .btn-gold {
+  animation: panel-in 0.65s ease both;
+  animation-delay: 0.28s;
+}
+
 @keyframes panel-in {
   from {
     opacity: 0;
@@ -227,26 +252,63 @@ textarea.field-line {
   }
 }
 
-/* Crack sequence */
+/* Crack sequence — fixed size during break, expand only after reveal */
 
 .cookie-wrap.is-cracking {
-  width: min(88vw, 300px);
-  height: auto;
-  min-height: 0;
-  display: flex;
-  align-items: stretch;
-  justify-content: center;
   animation: none;
 }
 
-.cookie-wrap.is-cracking .cookie-glow,
+.cookie-wrap.is-cracking.is-impact {
+  animation: cookie-impact 0.45s ease;
+}
+
+@keyframes cookie-impact {
+  0% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(1.08);
+  }
+  60% {
+    transform: scale(0.97);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.cookie-wrap.is-cracking .cookie-glow {
+  animation: crack-flash 0.7s ease forwards;
+}
+
+@keyframes crack-flash {
+  0% {
+    opacity: 0.7;
+    transform: scale(0.92);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1.25);
+    background: radial-gradient(
+      circle,
+      rgba(255, 236, 190, 0.45) 0%,
+      rgba(196, 165, 116, 0.12) 45%,
+      transparent 70%
+    );
+  }
+  100% {
+    opacity: 0.25;
+    transform: scale(1.05);
+  }
+}
+
 #cookie-stage.is-fortune .cookie-glow {
-  opacity: 0.35;
+  opacity: 0.3;
   animation: none;
 }
 
 .cookie-wrap.is-cracking .cookie-svg {
-  animation: cookie-precrack 0.35s ease forwards;
+  animation: cookie-precrack 0.42s ease forwards;
   pointer-events: none;
 }
 
@@ -255,12 +317,16 @@ textarea.field-line {
     transform: scale(1) rotate(0deg);
     opacity: 1;
   }
-  40% {
-    transform: scale(1.06) rotate(-1deg);
+  45% {
+    transform: scale(1.08) rotate(-2deg);
     opacity: 1;
   }
+  70% {
+    transform: scale(1.02) rotate(1deg);
+    opacity: 0.85;
+  }
   100% {
-    transform: scale(0.98) rotate(0deg);
+    transform: scale(0.96) rotate(0deg);
     opacity: 0;
   }
 }
@@ -268,20 +334,16 @@ textarea.field-line {
 .cookie-wrap.is-cracking #cookie-left,
 .cookie-wrap.is-cracking #cookie-right {
   opacity: 1;
-  width: 100%;
-  height: 180px;
-  top: 50%;
-  margin-top: -90px;
   z-index: 0;
   filter: drop-shadow(0 12px 18px rgba(0, 0, 0, 0.4));
 }
 
 .cookie-wrap.is-cracking #cookie-left {
-  animation: crack-left 1.15s cubic-bezier(0.16, 1, 0.3, 1) 0.28s both;
+  animation: crack-left 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.36s both;
 }
 
 .cookie-wrap.is-cracking #cookie-right {
-  animation: crack-right 1.15s cubic-bezier(0.16, 1, 0.3, 1) 0.28s both;
+  animation: crack-right 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.36s both;
 }
 
 @keyframes crack-left {
@@ -289,13 +351,13 @@ textarea.field-line {
     transform: translate(0, 0) rotate(0deg) scale(1);
     opacity: 1;
   }
-  30% {
-    transform: translate(-8%, -4%) rotate(-6deg) scale(1.02);
+  25% {
+    transform: translate(-6%, -6%) rotate(-8deg) scale(1.04);
     opacity: 1;
   }
   100% {
-    transform: translate(-56%, 8%) rotate(-22deg) scale(0.92);
-    opacity: 0.4;
+    transform: translate(-62%, 12%) rotate(-28deg) scale(0.9);
+    opacity: 0.55;
   }
 }
 
@@ -304,14 +366,31 @@ textarea.field-line {
     transform: translate(0, 0) rotate(0deg) scale(1);
     opacity: 1;
   }
-  30% {
-    transform: translate(8%, -4%) rotate(6deg) scale(1.02);
+  25% {
+    transform: translate(6%, -6%) rotate(8deg) scale(1.04);
     opacity: 1;
   }
   100% {
-    transform: translate(56%, 10%) rotate(22deg) scale(0.92);
-    opacity: 0.4;
+    transform: translate(62%, 14%) rotate(28deg) scale(0.9);
+    opacity: 0.55;
   }
+}
+
+.cookie-wrap.is-cracking.is-revealed {
+  width: min(88vw, 300px);
+  height: auto;
+  min-height: 0;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+}
+
+.cookie-wrap.is-cracking.is-revealed #cookie-left,
+.cookie-wrap.is-cracking.is-revealed #cookie-right {
+  width: 100%;
+  height: 180px;
+  top: 50%;
+  margin-top: -90px;
 }
 
 /* Crumbs */
@@ -362,7 +441,28 @@ textarea.field-line {
     0 0 0 1px rgba(255, 248, 230, 0.08);
 }
 
+.fortune-slip.opacity-0 {
+  opacity: 0 !important;
+}
+
 .fortune-slip.is-visible {
+  opacity: 1 !important;
+  pointer-events: auto;
+  animation: slip-rise 0.95s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.fortune-slip.is-visible.is-centered-reveal {
+  position: absolute !important;
+  left: 50% !important;
+  top: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  width: min(72vw, 240px) !important;
+  max-height: 70%;
+  overflow: hidden;
+  z-index: 3;
+}
+
+.fortune-slip.is-visible.relative {
   position: relative !important;
   left: auto !important;
   top: auto !important;
@@ -370,20 +470,17 @@ textarea.field-line {
   bottom: auto !important;
   transform: none !important;
   width: 100% !important;
-  opacity: 1;
-  pointer-events: auto;
-  animation: slip-rise 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  max-height: none;
+  overflow: visible;
 }
 
 @keyframes slip-rise {
   0% {
     opacity: 0;
-    clip-path: inset(40% 0 40% 0);
-    filter: blur(2px);
+    filter: blur(3px);
   }
   100% {
     opacity: 1;
-    clip-path: inset(0 0 0 0);
     filter: blur(0);
   }
 }
@@ -496,10 +593,13 @@ textarea.field-line {
   .cookie-wrap.is-cracking #cookie-left,
   .cookie-wrap.is-cracking #cookie-right,
   .cookie-wrap.is-cracking .crumb,
+  .cookie-wrap.is-cracking.is-impact,
   .fortune-slip.is-visible,
   .fortune-inner p,
   .loader-ring,
   .stage-panel,
+  #stage-form .space-y-6 > *,
+  #stage-form .btn-gold,
   .header-fade,
   .btn-gold::after {
     animation: none !important;
@@ -507,8 +607,7 @@ textarea.field-line {
   }
 
   .fortune-slip.is-visible {
-    opacity: 1;
-    clip-path: none;
+    opacity: 1 !important;
     filter: none;
   }
 }
