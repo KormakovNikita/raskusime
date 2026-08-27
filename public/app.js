@@ -16,6 +16,7 @@
   const btnAgain = $('btn-again');
   const btnRetry = $('btn-retry');
   const inputName = $('input-name');
+  const inputEmail = $('input-email');
   const inputQuestion = $('input-question');
   const inputRetryQuestion = $('input-retry-question');
   const atmosphere = document.querySelector('.atmosphere');
@@ -326,6 +327,13 @@
 
   async function startPayment() {
     clearError();
+    const email = (inputEmail?.value || '').trim();
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      showError('Укажите email — на него отправим чек об оплате.');
+      inputEmail?.focus();
+      return;
+    }
+
     const generation = ++flowGeneration;
     btnPay.disabled = true;
     loaderText.textContent = 'Создаём платёж...';
@@ -333,6 +341,7 @@
 
     const payload = {
       name: inputName.value.trim(),
+      email,
       gender: selectedGender,
       question: inputQuestion.value.trim(),
     };

@@ -38,6 +38,10 @@ npm run dev
 | `OPENAI_BASE_URL` | Базовый URL API (совместимый с OpenAI Chat Completions) |
 | `DEMO_MODE` | `true` — симуляция оплаты без реального эквайринга |
 | `INSECURE_TLS` | `true` — отключить проверку SSL (только если в логах `SELF_SIGNED_CERT_IN_CHAIN`) |
+| `RECEIPT_ENABLED` | `true` — передавать объект `Receipt` в Init для онлайн-кассы |
+| `TINKOFF_TAXATION` | СНО в чеке: `usn_income` / `usn_income_outcome` / `osn` / `patent` / `esn` |
+| `RECEIPT_TAX` | Ставка НДС в позиции: для УСН без НДС — `none` |
+| `RECEIPT_ITEM_NAME` | Название услуги в чеке |
 
 Если `OPENAI_API_KEY` не задан, сервер временно отдаёт локальный шаблон. После добавления ключа перезапустите сервер — предсказания пойдут через LLM.
 

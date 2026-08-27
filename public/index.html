@@ -124,7 +124,7 @@
                 "name": "Нужно ли обязательно задавать вопрос?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "Нет. Имя, пол и вопрос необязательны. Если оставить поля пустыми, вы получите универсальную записку."
+                  "text": "Имя, пол и вопрос необязательны. Email нужен, чтобы отправить кассовый чек. Если вопрос пустой — универсальная записка."
                 }
               },
               {
@@ -387,6 +387,20 @@
                 autocomplete="given-name"
                 maxlength="80"
                 placeholder="Ваше имя"
+                class="field-line w-full bg-transparent border-0 border-b border-white/20 focus:border-sand outline-none py-3 text-sm text-white/90 placeholder:text-white/30 transition-colors"
+              />
+            </label>
+
+            <label class="block">
+              <span class="sr-only">Email для чека</span>
+              <input
+                id="input-email"
+                type="email"
+                name="email"
+                autocomplete="email"
+                maxlength="64"
+                required
+                placeholder="Email для чека"
                 class="field-line w-full bg-transparent border-0 border-b border-white/20 focus:border-sand outline-none py-3 text-sm text-white/90 placeholder:text-white/30 transition-colors"
               />
             </label>

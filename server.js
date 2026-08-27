@@ -23,6 +23,10 @@ const OPENAI_BASE_URL = (process.env.OPENAI_BASE_URL || 'https://api.openai.com/
 const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 const TINKOFF_API_URL = 'https://securepay.tinkoff.ru/v2/Init';
 const AMOUNT_KOPECKS = 2900;
+const RECEIPT_ENABLED = process.env.RECEIPT_ENABLED !== 'false';
+const TINKOFF_TAXATION = process.env.TINKOFF_TAXATION || 'usn_income';
+const RECEIPT_TAX = process.env.RECEIPT_TAX || 'none';
+const RECEIPT_ITEM_NAME = process.env.RECEIPT_ITEM_NAME || 'Предсказание Раскуси';
 const INSECURE_TLS =
   process.env.INSECURE_TLS === 'true' || process.env.NODE_TLS_REJECT_UNAUTHORIZED === '0';
 
@@ -256,7 +260,28 @@ function normalizeFormInput(body = {}) {
   const name = typeof body.name === 'string' ? body.name.trim().slice(0, 80) : '';
   const gender = body.gender === 'm' || body.gender === 'f' ? body.gender : '';
   const question = typeof body.question === 'string' ? body.question.trim().slice(0, 500) : '';
-  return { name, gender, question };
+  const emailRaw = typeof body.email === 'string' ? body.email.trim().slice(0, 64) : '';
+  const email = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailRaw) ? emailRaw : '';
+  return { name, gender, question, email };
+}
+
+function buildReceipt(email) {
+  return {
+    Email: email,
+    Taxation: TINKOFF_TAXATION,
+    Items: [
+      {
+        Name: RECEIPT_ITEM_NAME.slice(0, 128),
+        Price: AMOUNT_KOPECKS,
+        Quantity: 1,
+        Amount: AMOUNT_KOPECKS,
+        Tax: RECEIPT_TAX,
+        PaymentMethod: 'full_payment',
+        PaymentObject: 'service',
+        MeasurementUnit: 'шт',
+      },
+    ],
+  };
 }
 
 async function generateFortune(userData) {
@@ -303,7 +328,15 @@ async function generateFortune(userData) {
 
 app.post('/api/create-payment', async (req, res) => {
   try {
-    const { name, gender, question } = normalizeFormInput(req.body);
+    const { name, gender, question, email } = normalizeFormInput(req.body);
+
+    if (RECEIPT_ENABLED && !DEMO_MODE && !email) {
+      return res.status(400).json({
+        success: false,
+        error: 'Укажите email — на него отправим чек об оплате.',
+      });
+    }
+
     const orderId = `raskusi-${Date.now()}-${uuidv4().slice(0, 8)}`;
 
     orders.set(orderId, {
@@ -311,6 +344,7 @@ app.post('/api/create-payment', async (req, res) => {
       name,
       gender,
       question,
+      email,
       status: 'pending',
       createdAt: Date.now(),
     });
@@ -329,11 +363,16 @@ app.post('/api/create-payment', async (req, res) => {
       TerminalKey: TINKOFF_TERMINAL_KEY,
       Amount: AMOUNT_KOPECKS,
       OrderId: orderId,
-      Description: 'Предсказание Раскуси',
+      Description: RECEIPT_ITEM_NAME.slice(0, 250),
       SuccessURL: `${BASE_URL}/?orderId=${encodeURIComponent(orderId)}&status=success`,
       FailURL: `${BASE_URL}/?orderId=${encodeURIComponent(orderId)}&status=fail`,
       NotificationURL: `${BASE_URL}/api/payment-webhook`,
     };
+
+    if (RECEIPT_ENABLED) {
+      // Receipt is excluded from Token calculation by generateTinkoffToken.
+      initParams.Receipt = buildReceipt(email);
+    }
 
     initParams.Token = generateTinkoffToken(initParams, TINKOFF_SECRET_PASSWORD);
 
@@ -582,6 +621,8 @@ app.get('/api/health', (_req, res) => {
     tinkoffPasswordLength: TINKOFF_SECRET_PASSWORD.length,
     baseUrl: BASE_URL,
     insecureTls: INSECURE_TLS,
+    receiptEnabled: RECEIPT_ENABLED,
+    taxation: TINKOFF_TAXATION,
   });
 });
 
