@@ -325,6 +325,14 @@
     });
   }
 
+  let metrikaId = null;
+
+  function trackGoal(goal) {
+    if (metrikaId && typeof window.ym === 'function') {
+      window.ym(metrikaId, 'reachGoal', goal);
+    }
+  }
+
   async function startPayment() {
     clearError();
     const email = (inputEmail?.value || '').trim();
@@ -363,6 +371,7 @@
 
       activeOrderId = data.orderId;
       sessionStorage.setItem('raskusi_orderId', data.orderId);
+      trackGoal('pay_click');
 
       loaderText.textContent = 'Проверяем транзакцию...';
       window.location.href = data.PaymentURL;
@@ -387,6 +396,7 @@
         canRetry: Boolean(data.canRetry),
         orderId: data.orderId || orderId,
       });
+      trackGoal('fortune_received');
     } catch (err) {
       if (generation !== flowGeneration) return;
       clearPaymentParams();
@@ -521,6 +531,9 @@
       const health = await fetch('/api/health').then((r) => r.json());
       if (health.demoMode) {
         demoHint.classList.remove('hidden');
+      }
+      if (health.metrikaEnabled && health.metrikaId) {
+        metrikaId = health.metrikaId;
       }
     } catch {
       /* ignore */

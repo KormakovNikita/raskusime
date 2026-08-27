@@ -739,6 +739,40 @@ textarea.field-line {
   font-size: 0.9rem;
 }
 
+.sample-grid {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+
+@media (min-width: 640px) {
+  .sample-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.sample-card {
+  padding: 1.1rem 1.15rem;
+  border: 1px solid rgba(196, 165, 116, 0.18);
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 2px;
+}
+
+.sample-card p {
+  margin: 0 0 0.65rem;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 1.05rem;
+  line-height: 1.45;
+  color: rgba(247, 241, 230, 0.88);
+}
+
+.sample-card p:last-child {
+  margin-bottom: 0;
+  color: rgba(196, 165, 116, 0.85);
+  font-family: Manrope, system-ui, sans-serif;
+  font-size: 0.82rem;
+}
+
 .site-footer {
   padding: 2rem 1.25rem 2.5rem;
   text-align: center;
@@ -750,6 +784,21 @@ textarea.field-line {
   font-size: 0.7rem;
   letter-spacing: 0.04em;
   color: rgba(255, 255, 255, 0.22);
+}
+
+.footer-legal {
+  font-size: 0.65rem !important;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.18) !important;
+}
+
+.footer-contact a {
+  color: rgba(196, 165, 116, 0.6);
+  text-decoration: none;
+}
+
+.footer-contact a:hover {
+  color: var(--sand-light);
 }
 
 .footer-nav {

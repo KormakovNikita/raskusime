@@ -43,6 +43,7 @@ npm run dev
 | `RECEIPT_TAX` | Ставка НДС в позиции: для УСН без НДС — `none` |
 | `RECEIPT_ITEM_NAME` | Название услуги в чеке |
 | `REFUND_ADMIN_KEY` | Секрет для `POST /api/refund` (полный возврат через Cancel) |
+| `YANDEX_METRIKA_ID` | ID счётчика Яндекс.Метрики (только цифры) |
 
 ### Возврат средств
 
@@ -90,7 +91,7 @@ PaymentId также виден в кабинете Т-Банка.
 
 ### `GET /api/get-fortune?orderId=...`
 
-Если заказ оплачен — генерирует предсказание через LLM и удаляет заказ из памяти. Иначе `403`.
+Если заказ оплачен — генерирует предсказание через LLM. Готовая записка сохраняется на 72 часа: можно вернуться по ссылке с `orderId` после оплаты.
 
 ## Сценарий пользователя
 
@@ -101,10 +102,17 @@ PaymentId также виден в кабинете Т-Банка.
 
 ## Продакшен
 
-1. Укажите реальные `TINKOFF_*` и `OPENAI_API_KEY`.
+1. Укажите **боевые** `TINKOFF_*` (ключ без суффикса `DEMO`) и `OPENAI_API_KEY`.
 2. Установите `DEMO_MODE=false`.
 3. Пропишите публичный `BASE_URL` (HTTPS), доступный для вебхуков Т-Банка.
-4. В личном кабинете терминала укажите Notification URL: `{BASE_URL}/api/payment-webhook`.
+4. В личном кабинете терминала: Notification URL → `{BASE_URL}/api/payment-webhook`.
+5. Проверьте `/api/health`: `"tinkoffMode":"live"`, `"demoMode":false`.
+6. Опционально: `YANDEX_METRIKA_ID=12345678` для целей «pay_click» и «fortune_received».
+7. SSL на VPS: `sudo bash scripts/fix-vps-ca.sh`, затем `INSECURE_TLS=false`.
+
+Заказы и платежи сохраняются в `data/store.json` (переживают перезапуск PM2).
+
+После `git pull` при изменении вёрстки: `npm install && npm run build:css && pm2 restart raskusi`.
 
 ## SEO — этап 1 (сделано)
 

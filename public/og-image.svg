@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label=" 0A:CA8">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#161616"/>
+      <stop offset="100%" stop-color="#101010"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="35%" r="55%">
+      <stop offset="0%" stop-color="#c4a574" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#c4a574" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#glow)"/>
+  <ellipse cx="600" cy="250" rx="120" ry="78" fill="#d4bc8e" opacity="0.92"/>
+  <ellipse cx="600" cy="250" rx="95" ry="62" fill="#c4a574" opacity="0.55"/>
+  <text x="600" y="390" text-anchor="middle" fill="#f5f5f5" font-family="Georgia, serif" font-size="72" letter-spacing="18"> !#!</text>
+  <text x="600" y="450" text-anchor="middle" fill="#c4a574" font-family="Arial, sans-serif" font-size="28">5G5=L5 A ?A8E>;>38G5A:>9 70?8A:>9</text>
+  <text x="600" y="520" text-anchor="middle" fill="#a8a8a8" font-family="Arial, sans-serif" font-size="22">raskusime.ru</text>
+</svg>

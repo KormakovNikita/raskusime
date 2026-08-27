@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Раскуси — предсказание онлайн | психологическая записка</title>
+    <title>Раскуси — печенье с предсказанием онлайн | психологическая записка</title>
     <meta
       name="description"
-      content="Раскуси — короткое психологическое предсказание в стиле китайского печенья с запиской. Не магия, а метафора и совет на день. Оплата через T-Pay."
+      content="Раскуси — короткое психологическое предсказание в стиле китайского печенья с запиской. Не магия, а метафора и шаг на день. Оплата через T-Pay."
     />
     <meta
       name="keywords"
@@ -19,16 +19,18 @@
     <meta property="og:locale" content="ru_RU" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Раскуси" />
-    <meta property="og:title" content="Раскуси — предсказание онлайн" />
+    <meta property="og:title" content="Раскуси — печенье с предсказанием онлайн" />
     <meta
       property="og:description"
-      content="Лаконичная психологическая записка в стиле китайского печенья. Не магия — метафора и шаг на день."
+      content="Короткая психологическая записка в стиле китайского печенья. Не магия — метафора и шаг на день."
     />
     <meta property="og:url" content="{{BASE_URL}}/" />
-    <meta property="og:image" content="{{BASE_URL}}/favicon.svg" />
+    <meta property="og:image" content="{{BASE_URL}}/og-image.svg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
 
-    <meta name="twitter:card" content="summary" />
-    <meta name="twitter:title" content="Раскуси — предсказание онлайн" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Раскуси — печенье с предсказанием онлайн" />
     <meta
       name="twitter:description"
       content="Короткое психологическое предсказание-записка. Не магия — метафора и шаг на день."
@@ -38,27 +40,7 @@
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/favicon.svg" />
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              ink: '#121212',
-              sand: '#c4a574',
-              'sand-light': '#d4bc8e',
-              'sand-dim': '#8a7350',
-              mist: '#a8a8a8',
-              parchment: '#f7f1e6',
-            },
-            fontFamily: {
-              sans: ['"Manrope"', 'system-ui', 'sans-serif'],
-              serif: ['"Cormorant Garamond"', 'Georgia', 'serif'],
-            },
-          },
-        },
-      };
-    </script>
+    <link rel="stylesheet" href="/tailwind.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -427,14 +409,6 @@
 
           <p id="form-error" class="hidden text-sm text-red-300/90 text-center" role="alert"></p>
 
-          <button
-            id="btn-pay"
-            type="button"
-            class="btn-gold relative z-20 w-full py-4 px-6 text-sm sm:text-[15px] font-medium tracking-wide text-ink bg-sand hover:bg-sand-light disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Раскусить за 29 ₽ через T-Pay
-          </button>
-
           <label class="block">
             <span class="sr-only">Email для чека</span>
             <input
@@ -448,6 +422,14 @@
               class="field-line w-full bg-transparent border-0 border-b border-white/20 focus:border-sand outline-none py-3 text-sm text-white/90 placeholder:text-white/30 transition-colors"
             />
           </label>
+
+          <button
+            id="btn-pay"
+            type="button"
+            class="btn-gold relative z-20 w-full py-4 px-6 text-sm sm:text-[15px] font-medium tracking-wide text-ink bg-sand hover:bg-sand-light disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Раскусить за 29 ₽ через T-Pay
+          </button>
 
           <p id="demo-hint" class="hidden text-center text-[11px] text-white/25 tracking-wide">
             Демо-режим: оплата симулируется без реального списания
@@ -494,6 +476,25 @@
             Спросить снова
           </button>
         </section>
+        </section>
+
+        <section id="examples" class="seo-section seo-section-alt" aria-labelledby="examples-title">
+          <div class="seo-inner">
+            <h2 id="examples-title">Как выглядит записка</h2>
+            <p class="seo-lead">Примеры формата — не персональные ответы. Ваш текст будет другим.</p>
+            <div class="sample-grid">
+              <article class="sample-card">
+                <p>То, что зреет в тишине, скоро потребует твоего выбора.</p>
+                <p>Ясность приходит не от ожидания, а от одного честного шага.</p>
+                <p>Назови сегодня одно решение вслух.</p>
+              </article>
+              <article class="sample-card">
+                <p>Ответ уже рядом — его закрывает чужое мнение.</p>
+                <p>Чем меньше согласований, тем слышнее собственный голос.</p>
+                <p>Сделай маленький шаг без чужого одобрения.</p>
+              </article>
+            </div>
+          </div>
         </section>
 
         <section id="how" class="seo-section" aria-labelledby="how-title">
@@ -565,6 +566,14 @@
                 </p>
               </details>
               <details class="faq-item">
+                <summary>Закрыл страницу после оплаты — что делать?</summary>
+                <p>
+                  Вернитесь по ссылке из адресной строки после оплаты (в ней есть номер заказа) или
+                  откройте сайт снова — если оплата прошла, записка подтянется автоматически в
+                  течение 72 часов.
+                </p>
+              </details>
+              <details class="faq-item">
                 <summary>Как проходит оплата?</summary>
                 <p>
                   Через интернет-эквайринг Т-Банка: T-Pay или банковская карта. Текст открывается
@@ -578,6 +587,12 @@
 
       <footer class="site-footer">
         <p>Не магия — психологические метафоры.</p>
+        <p class="footer-legal">
+          ИП Кормаков Никита Геннадьевич · ИНН 166014480101 · ОГРНИП 321169000142220
+        </p>
+        <p class="footer-contact">
+          <a href="mailto:support@raskusime.ru">support@raskusime.ru</a>
+        </p>
         <nav class="footer-nav" aria-label="Юридическая информация">
           <a href="/offer.html">Оферта</a>
           <a href="/privacy.html">Конфиденциальность</a>
@@ -586,6 +601,7 @@
       </footer>
     </div>
 
+    {{YANDEX_METRIKA_SCRIPT}}
     <script src="/app.js"></script>
   </body>
 </html>

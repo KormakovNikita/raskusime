@@ -9,6 +9,7 @@ const { URL } = require('url');
 const express = require('express');
 const cors = require('cors');
 const { v4: uuidv4 } = require('uuid');
+const { orders, payments, flush: flushStore } = require('./store');
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3847;
@@ -29,7 +30,10 @@ const TINKOFF_TAXATION = process.env.TINKOFF_TAXATION || 'usn_income';
 const RECEIPT_TAX = process.env.RECEIPT_TAX || 'none';
 const RECEIPT_ITEM_NAME = process.env.RECEIPT_ITEM_NAME || 'Предсказание Раскуси';
 const REFUND_ADMIN_KEY = process.env.REFUND_ADMIN_KEY || '';
+const YANDEX_METRIKA_ID = (process.env.YANDEX_METRIKA_ID || '').trim();
 const PAYMENT_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
+const FULFILLED_RETENTION_MS = 72 * 60 * 60 * 1000;
+const PENDING_RETENTION_MS = 60 * 60 * 1000;
 const INSECURE_TLS =
   process.env.INSECURE_TLS === 'true' || process.env.NODE_TLS_REJECT_UNAUTHORIZED === '0';
 
@@ -48,6 +52,8 @@ const DEMO_MODE =
   process.env.DEMO_MODE === 'true' ||
   isPlaceholder(TINKOFF_TERMINAL_KEY) ||
   isPlaceholder(TINKOFF_SECRET_PASSWORD);
+const TINKOFF_IS_DEMO_KEY = /DEMO/i.test(TINKOFF_TERMINAL_KEY);
+const TINKOFF_MODE = DEMO_MODE ? 'demo' : TINKOFF_IS_DEMO_KEY ? 'test' : 'live';
 
 /**
  * Outbound JSON HTTP(S) request. Uses Node https/http instead of fetch so we can
@@ -114,14 +120,8 @@ function requestJson(urlString, { method = 'GET', headers = {}, body, timeoutMs 
   });
 }
 
-/** @type {Map<string, { orderId: string, name: string, gender: string, question: string, email?: string, status: string, paymentId?: string, createdAt: number }>} */
-const orders = new Map();
-
-/**
- * Kept after fortune delivery so support can refund by PaymentId / OrderId.
- * @type {Map<string, { orderId: string, paymentId: string, email: string, amount: number, status: string, createdAt: number, refundedAt?: number }>}
- */
-const payments = new Map();
+/** @type {import('./store').orders} orders bucket */
+/** @type {import('./store').payments} payments bucket */
 
 function rememberPayment(record) {
   if (!record?.paymentId) return;
@@ -146,6 +146,39 @@ function findPayment({ paymentId, orderId }) {
     }
   }
   return null;
+}
+
+function saveOrder(orderId, patch) {
+  const prev = orders.get(orderId) || { orderId, createdAt: Date.now() };
+  orders.set(orderId, { ...prev, ...patch, orderId });
+}
+
+function markOrderFulfilled(order) {
+  saveOrder(order.orderId, {
+    status: 'fulfilled',
+    fortuneText: order.fortuneText,
+    fortuneSource: order.fortuneSource,
+    fulfilledAt: Date.now(),
+    name: order.name,
+    gender: order.gender,
+    question: order.question,
+    email: order.email,
+    paymentId: order.paymentId,
+    createdAt: order.createdAt,
+  });
+}
+
+function buildMetrikaScript() {
+  if (!YANDEX_METRIKA_ID || !/^\d+$/.test(YANDEX_METRIKA_ID)) return '';
+  return `<script type="text/javascript">
+   (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+   m[i].l=1*new Date();
+   for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+   k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})
+   (window, document, "script", "https://mc.yandex.ru/metrika/tag.js", "ym");
+   ym(${YANDEX_METRIKA_ID}, "init", { clickmap:true, trackLinks:true, accurateTrackBounce:true, webvisor:true });
+</script>
+<noscript><div><img src="https://mc.yandex.ru/watch/${YANDEX_METRIKA_ID}" style="position:absolute; left:-9999px;" alt="" /></div></noscript>`;
 }
 
 const SYSTEM_PROMPT = `Ты пишешь записки из китайского печенья: короткие предсказания-ориентиры.
@@ -175,7 +208,12 @@ app.use(express.urlencoded({ extended: true }));
 
 function renderPublic(fileName) {
   const filePath = path.join(__dirname, 'public', fileName);
-  return fs.readFileSync(filePath, 'utf8').split('{{BASE_URL}}').join(BASE_URL);
+  return fs
+    .readFileSync(filePath, 'utf8')
+    .split('{{BASE_URL}}')
+    .join(BASE_URL)
+    .split('{{YANDEX_METRIKA_SCRIPT}}')
+    .join(buildMetrikaScript());
 }
 
 function sendPublicHtml(res, fileName, status = 200) {
@@ -373,8 +411,7 @@ app.post('/api/create-payment', async (req, res) => {
 
     const orderId = `raskusi-${Date.now()}-${uuidv4().slice(0, 8)}`;
 
-    orders.set(orderId, {
-      orderId,
+    saveOrder(orderId, {
       name,
       gender,
       question,
@@ -456,8 +493,7 @@ app.post('/api/create-payment', async (req, res) => {
 
     const order = orders.get(orderId);
     if (order) {
-      order.paymentId = data.PaymentId;
-      orders.set(orderId, order);
+      saveOrder(orderId, { paymentId: data.PaymentId });
     }
 
     rememberPayment({
@@ -504,9 +540,12 @@ app.post('/api/payment-webhook', (req, res) => {
 
     if (status === 'AUTHORIZED' || status === 'CONFIRMED') {
       const order = orders.get(orderId);
-      order.status = 'paid';
-      if (payload.PaymentId) order.paymentId = payload.PaymentId;
-      orders.set(orderId, order);
+      if (!order) return res.status(200).send('OK');
+
+      saveOrder(orderId, {
+        status: 'paid',
+        paymentId: payload.PaymentId || order.paymentId,
+      });
 
       const paymentId = payload.PaymentId || order.paymentId;
       if (paymentId) {
@@ -541,8 +580,7 @@ app.post('/api/demo-confirm', (req, res) => {
   }
 
   const order = orders.get(orderId);
-  order.status = 'paid';
-  orders.set(orderId, order);
+  saveOrder(orderId, { status: 'paid' });
 
   return res.json({ success: true, orderId });
 });
@@ -560,7 +598,18 @@ app.get('/api/get-fortune', async (req, res) => {
 
     const order = orders.get(orderId);
 
-    if (order.status !== 'paid') {
+    if (order.status === 'fulfilled' && order.fortuneText) {
+      return res.json({
+        success: true,
+        fortune: order.fortuneText,
+        source: order.fortuneSource || 'cached',
+        canRetry: false,
+        orderId,
+        recovered: true,
+      });
+    }
+
+    if (order.status !== 'paid' && order.status !== 'retry') {
       return res.status(403).json({
         success: false,
         error: 'Оплата ещё не подтверждена.',
@@ -575,8 +624,7 @@ app.get('/api/get-fortune', async (req, res) => {
     });
 
     if (isRefusalFortune(result.text)) {
-      order.status = 'retry';
-      orders.set(orderId, order);
+      saveOrder(orderId, { status: 'retry' });
       return res.json({
         success: true,
         fortune: result.text,
@@ -586,7 +634,11 @@ app.get('/api/get-fortune', async (req, res) => {
       });
     }
 
-    orders.delete(orderId);
+    markOrderFulfilled({
+      ...order,
+      fortuneText: result.text,
+      fortuneSource: result.source,
+    });
 
     if (order.paymentId) {
       const existing = findPayment({ paymentId: order.paymentId, orderId });
@@ -627,7 +679,7 @@ app.post('/api/retry-fortune', async (req, res) => {
       });
     }
 
-    const order = orders.get(orderId);
+    let order = orders.get(orderId);
     if (order.status !== 'retry') {
       return res.status(403).json({
         success: false,
@@ -636,11 +688,13 @@ app.post('/api/retry-fortune', async (req, res) => {
     }
 
     const next = normalizeFormInput(req.body);
-    if (next.name) order.name = next.name;
-    if (next.gender) order.gender = next.gender;
-    order.question = next.question;
-    order.status = 'paid';
-    orders.set(orderId, order);
+    saveOrder(orderId, {
+      name: next.name || order.name,
+      gender: next.gender || order.gender,
+      question: next.question,
+      status: 'paid',
+    });
+    order = orders.get(orderId);
 
     const result = await generateFortune({
       name: order.name,
@@ -649,8 +703,7 @@ app.post('/api/retry-fortune', async (req, res) => {
     });
 
     if (isRefusalFortune(result.text)) {
-      order.status = 'retry';
-      orders.set(orderId, order);
+      saveOrder(orderId, { status: 'retry' });
       return res.json({
         success: true,
         fortune: result.text,
@@ -660,7 +713,11 @@ app.post('/api/retry-fortune', async (req, res) => {
       });
     }
 
-    orders.delete(orderId);
+    markOrderFulfilled({
+      ...order,
+      fortuneText: result.text,
+      fortuneSource: result.source,
+    });
 
     if (order.paymentId) {
       const existing = findPayment({ paymentId: order.paymentId, orderId });
@@ -805,6 +862,7 @@ app.get('/api/health', (_req, res) => {
   res.json({
     ok: true,
     demoMode: DEMO_MODE,
+    tinkoffMode: TINKOFF_MODE,
     openaiConfigured: AI_ENABLED,
     model: AI_ENABLED ? OPENAI_MODEL : null,
     openaiBaseUrl: OPENAI_BASE_URL,
@@ -815,6 +873,9 @@ app.get('/api/health', (_req, res) => {
     receiptEnabled: RECEIPT_ENABLED,
     taxation: TINKOFF_TAXATION,
     refundApiEnabled: !isPlaceholder(REFUND_ADMIN_KEY),
+    metrikaEnabled: Boolean(YANDEX_METRIKA_ID),
+    metrikaId: YANDEX_METRIKA_ID || null,
+    persistence: 'json-file',
   });
 });
 
@@ -826,11 +887,16 @@ app.get('*', (req, res) => {
   sendPublicHtml(res, 'index.html');
 });
 
-// Cleanup stale pending orders (1 hour) and old payment records (7 days)
+// Cleanup stale orders and old payment records
 setInterval(() => {
   const now = Date.now();
   for (const [id, order] of orders.entries()) {
-    if (now - order.createdAt > 60 * 60 * 1000) {
+    const age = now - (order.createdAt || 0);
+    if (order.status === 'pending' && age > PENDING_RETENTION_MS) {
+      orders.delete(id);
+      continue;
+    }
+    if (order.status === 'fulfilled' && order.fulfilledAt && now - order.fulfilledAt > FULFILLED_RETENTION_MS) {
       orders.delete(id);
     }
   }
@@ -841,11 +907,21 @@ setInterval(() => {
   }
 }, 15 * 60 * 1000).unref();
 
+process.on('SIGINT', () => {
+  flushStore();
+  process.exit(0);
+});
+process.on('SIGTERM', () => {
+  flushStore();
+  process.exit(0);
+});
+
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Раскуси listening on http://0.0.0.0:${PORT}`);
   console.log(`BASE_URL=${BASE_URL}`);
-  console.log(`DEMO_MODE=${DEMO_MODE}`);
+  console.log(`DEMO_MODE=${DEMO_MODE} tinkoffMode=${TINKOFF_MODE}`);
   console.log(`AI_ENABLED=${AI_ENABLED} model=${OPENAI_MODEL}`);
   console.log(`INSECURE_TLS=${INSECURE_TLS}`);
   console.log(`REFUND_API=${!isPlaceholder(REFUND_ADMIN_KEY)}`);
+  console.log(`METRIKA=${YANDEX_METRIKA_ID ? 'on' : 'off'}`);
 });
