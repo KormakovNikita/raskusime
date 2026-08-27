@@ -7,6 +7,7 @@
   const loaderText = $('loader-text');
   const formError = $('form-error');
   const demoHint = $('demo-hint');
+  const cookieStage = $('cookie-stage');
   const cookieWrap = $('cookie-wrap');
   const fortuneSlip = $('fortune-slip');
   const btnPay = $('btn-pay');
@@ -50,10 +51,24 @@
 
     if (stage === 'form') {
       cookieWrap.classList.remove('is-cracking');
-      fortuneSlip.classList.remove('is-visible');
+      cookieStage.classList.remove('is-fortune');
+      fortuneSlip.classList.remove('is-visible', 'relative', 'w-full');
+      fortuneSlip.classList.add(
+        'absolute',
+        'left-1/2',
+        'top-1/2',
+        '-translate-x-1/2',
+        '-translate-y-1/2',
+        'opacity-0',
+        'pointer-events-none'
+      );
       ['fortune-block-1', 'fortune-block-2', 'fortune-block-3'].forEach((id) => {
         $(id).textContent = '';
       });
+    }
+
+    if (stage === 'fortune') {
+      cookieStage.classList.add('is-fortune');
     }
   }
 
@@ -83,6 +98,18 @@
     clearPaymentParams();
     setStage('fortune');
     cookieWrap.classList.add('is-cracking');
+
+    // Leave absolute centering for the closed cookie; switch slip into document flow
+    fortuneSlip.classList.remove(
+      'absolute',
+      'left-1/2',
+      'top-1/2',
+      '-translate-x-1/2',
+      '-translate-y-1/2',
+      'opacity-0',
+      'pointer-events-none'
+    );
+    fortuneSlip.classList.add('relative', 'w-full');
 
     window.setTimeout(() => {
       fortuneSlip.classList.add('is-visible');

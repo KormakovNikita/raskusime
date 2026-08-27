@@ -50,8 +50,8 @@
 
       <main class="flex-1 flex flex-col items-center justify-center px-5 sm:px-8 pb-16 pt-4">
         <!-- Cookie stage -->
-        <div id="cookie-stage" class="relative z-0 w-full max-w-md flex items-center justify-center mb-10 sm:mb-12 pointer-events-none">
-          <div id="cookie-wrap" class="cookie-wrap relative w-48 h-32 sm:w-56 sm:h-36 pointer-events-auto">
+        <div id="cookie-stage" class="relative z-0 w-full max-w-md flex items-center justify-center mb-10 sm:mb-12">
+          <div id="cookie-wrap" class="cookie-wrap relative w-48 h-32 sm:w-56 sm:h-36">
             <svg
               id="cookie-whole"
               class="cookie-svg absolute inset-0 w-full h-full"
@@ -118,7 +118,7 @@
 
             <article
               id="fortune-slip"
-              class="fortune-slip absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(88vw,280px)] bg-parchment text-ink px-5 py-7 sm:px-6 sm:py-8 opacity-0 pointer-events-none shadow-[0_12px_40px_rgba(0,0,0,0.45)]"
+              class="fortune-slip absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(88vw,280px)] bg-parchment text-ink px-5 py-7 sm:px-6 sm:py-8 opacity-0 pointer-events-none shadow-[0_12px_40px_rgba(0,0,0,0.45)] z-[2]"
               aria-live="polite"
             >
               <div class="fortune-inner font-serif text-[15px] sm:text-base leading-relaxed text-center space-y-5 text-[#2a2520]">
@@ -203,7 +203,7 @@
         </section>
 
         <!-- Stage 3: after fortune -->
-        <section id="stage-again" class="hidden relative z-20 w-full max-w-md mt-10 sm:mt-14">
+        <section id="stage-again" class="hidden relative z-20 w-full max-w-sm mx-auto mt-8 sm:mt-10">
           <button
             id="btn-again"
             type="button"

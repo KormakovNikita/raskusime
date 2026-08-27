@@ -38,15 +38,30 @@ textarea.field-line {
   }
 }
 
+.cookie-wrap.is-cracking {
+  width: min(88vw, 280px);
+  height: auto;
+  min-height: 0;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+}
+
 .cookie-wrap.is-cracking .cookie-svg {
   animation: none;
   opacity: 0;
   transition: opacity 0.35s ease;
+  pointer-events: none;
 }
 
 .cookie-wrap.is-cracking #cookie-left,
 .cookie-wrap.is-cracking #cookie-right {
   opacity: 1;
+  width: 100%;
+  height: 140px;
+  top: 50%;
+  margin-top: -70px;
+  z-index: 0;
 }
 
 .cookie-wrap.is-cracking #cookie-left {
@@ -63,8 +78,8 @@ textarea.field-line {
     opacity: 1;
   }
   100% {
-    transform: translateX(-42%) rotate(-12deg);
-    opacity: 0.85;
+    transform: translateX(-48%) rotate(-12deg);
+    opacity: 0.55;
   }
 }
 
@@ -74,12 +89,25 @@ textarea.field-line {
     opacity: 1;
   }
   100% {
-    transform: translateX(42%) rotate(12deg);
-    opacity: 0.85;
+    transform: translateX(48%) rotate(12deg);
+    opacity: 0.55;
   }
 }
 
+.fortune-slip {
+  border-left: 1px solid rgba(42, 37, 32, 0.08);
+  border-right: 1px solid rgba(42, 37, 32, 0.08);
+  z-index: 2;
+}
+
 .fortune-slip.is-visible {
+  position: relative !important;
+  left: auto !important;
+  top: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  transform: none !important;
+  width: 100% !important;
   opacity: 1;
   pointer-events: auto;
   animation: slip-in 0.9s ease forwards;
@@ -88,17 +116,20 @@ textarea.field-line {
 @keyframes slip-in {
   0% {
     opacity: 0;
-    transform: translate(-50%, -46%) scale(0.96);
+    transform: translateY(10px) scale(0.98) !important;
   }
   100% {
     opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
+    transform: none !important;
   }
 }
 
-.fortune-slip {
-  border-left: 1px solid rgba(42, 37, 32, 0.08);
-  border-right: 1px solid rgba(42, 37, 32, 0.08);
+#cookie-stage.is-fortune {
+  margin-bottom: 1.5rem;
+}
+
+#stage-again {
+  margin-top: 1.75rem;
 }
 
 .fortune-inner p + p {
