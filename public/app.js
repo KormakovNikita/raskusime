@@ -132,7 +132,9 @@
   }
 
   function pollUntilPaid(orderId, generation, { maxAttempts = 40, intervalMs = 1500 } = {}) {
-    loaderText.textContent = 'Проверяем транзакцию...';
+    if (!loaderText.textContent || /транзакц/i.test(loaderText.textContent)) {
+      loaderText.textContent = 'Проверяем транзакцию...';
+    }
     setStage('loader');
 
     let attempts = 0;
@@ -161,6 +163,12 @@
           if (res.ok && data.success && data.fortune) {
             finish(resolve, data.fortune);
             return;
+          }
+
+          if (res.status === 403) {
+            loaderText.textContent = 'Проверяем транзакцию...';
+          } else if (res.ok || res.status === 202) {
+            loaderText.textContent = 'Готовим предсказание...';
           }
 
           if (res.status === 404) {
@@ -241,6 +249,7 @@
     const generation = ++flowGeneration;
     activeOrderId = orderId;
     sessionStorage.removeItem('raskusi_orderId');
+    loaderText.textContent = 'Готовим предсказание...';
 
     try {
       const fortune = await pollUntilPaid(orderId, generation);

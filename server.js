@@ -12,6 +12,11 @@ const BASE_URL = (process.env.BASE_URL || `http://localhost:${PORT}`).replace(/\
 const TINKOFF_TERMINAL_KEY = process.env.TINKOFF_TERMINAL_KEY || '';
 const TINKOFF_SECRET_PASSWORD = process.env.TINKOFF_SECRET_PASSWORD || '';
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
+const OPENAI_BASE_URL = (process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1').replace(
+  /\/$/,
+  ''
+);
+const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 const TINKOFF_API_URL = 'https://securepay.tinkoff.ru/v2/Init';
 const AMOUNT_KOPECKS = 2900;
 
@@ -21,6 +26,7 @@ const isPlaceholder = (value) =>
   value.includes('_here') ||
   value === 'changeme';
 
+const AI_ENABLED = !isPlaceholder(OPENAI_API_KEY);
 const DEMO_MODE =
   process.env.DEMO_MODE === 'true' ||
   isPlaceholder(TINKOFF_TERMINAL_KEY) ||
@@ -141,24 +147,25 @@ function personalizeFallback({ name, gender, question }) {
 }
 
 async function generateFortune(userData) {
-  if (isPlaceholder(OPENAI_API_KEY)) {
-    return personalizeFallback(userData);
+  if (!AI_ENABLED) {
+    console.warn('OPENAI_API_KEY is missing — using local fallback fortune');
+    return { text: personalizeFallback(userData), source: 'fallback' };
   }
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 25000);
+  const timeout = setTimeout(() => controller.abort(), 30000);
 
   try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await fetch(`${OPENAI_BASE_URL}/chat/completions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        temperature: 0.85,
-        max_tokens: 450,
+        model: OPENAI_MODEL,
+        temperature: 0.9,
+        max_tokens: 500,
         messages: [
           { role: 'system', content: SYSTEM_PROMPT },
           { role: 'user', content: buildUserPrompt(userData) },
@@ -170,16 +177,19 @@ async function generateFortune(userData) {
     if (!response.ok) {
       const errText = await response.text().catch(() => '');
       console.error('OpenAI error:', response.status, errText.slice(0, 500));
-      return personalizeFallback(userData);
+      throw new Error(`LLM HTTP ${response.status}`);
     }
 
     const data = await response.json();
     const text = data?.choices?.[0]?.message?.content?.trim();
-    if (!text) return personalizeFallback(userData);
-    return text;
+    if (!text) {
+      throw new Error('Empty LLM response');
+    }
+
+    return { text, source: 'ai' };
   } catch (err) {
     console.error('OpenAI request failed:', err.message);
-    return personalizeFallback(userData);
+    return { text: personalizeFallback(userData), source: 'fallback' };
   } finally {
     clearTimeout(timeout);
   }
@@ -350,7 +360,7 @@ app.get('/api/get-fortune', async (req, res) => {
       });
     }
 
-    const fortune = await generateFortune({
+    const result = await generateFortune({
       name: order.name,
       gender: order.gender,
       question: order.question,
@@ -360,7 +370,8 @@ app.get('/api/get-fortune', async (req, res) => {
 
     return res.json({
       success: true,
-      fortune,
+      fortune: result.text,
+      source: result.source,
     });
   } catch (err) {
     console.error('get-fortune error:', err);
@@ -375,7 +386,8 @@ app.get('/api/health', (_req, res) => {
   res.json({
     ok: true,
     demoMode: DEMO_MODE,
-    openaiConfigured: !isPlaceholder(OPENAI_API_KEY),
+    openaiConfigured: AI_ENABLED,
+    model: AI_ENABLED ? OPENAI_MODEL : null,
   });
 });
 
@@ -398,4 +410,5 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`Раскуси listening on http://0.0.0.0:${PORT}`);
   console.log(`BASE_URL=${BASE_URL}`);
   console.log(`DEMO_MODE=${DEMO_MODE}`);
+  console.log(`AI_ENABLED=${AI_ENABLED} model=${OPENAI_MODEL}`);
 });
