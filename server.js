@@ -1,5 +1,12 @@
 require('dotenv').config();
 
+// Some VPS images ship a broken/intercepted CA chain. Prefer fixing
+// ca-certificates on the host; this flag is an explicit last resort.
+if (process.env.INSECURE_TLS === 'true') {
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+  console.warn('WARNING: INSECURE_TLS=true — TLS certificate verification is disabled');
+}
+
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
@@ -543,4 +550,5 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`BASE_URL=${BASE_URL}`);
   console.log(`DEMO_MODE=${DEMO_MODE}`);
   console.log(`AI_ENABLED=${AI_ENABLED} model=${OPENAI_MODEL}`);
+  console.log(`INSECURE_TLS=${process.env.INSECURE_TLS === 'true'}`);
 });

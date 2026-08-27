@@ -37,6 +37,7 @@ npm run dev
 | `OPENAI_MODEL` | Модель Chat Completions (`gpt-4o-mini` и т.п.) |
 | `OPENAI_BASE_URL` | Базовый URL API (совместимый с OpenAI Chat Completions) |
 | `DEMO_MODE` | `true` — симуляция оплаты без реального эквайринга |
+| `INSECURE_TLS` | `true` — отключить проверку SSL (только если в логах `SELF_SIGNED_CERT_IN_CHAIN`) |
 
 Если `OPENAI_API_KEY` не задан, сервер временно отдаёт локальный шаблон. После добавления ключа перезапустите сервер — предсказания пойдут через LLM.
 
