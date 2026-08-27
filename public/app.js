@@ -488,6 +488,15 @@
   });
 
   async function init() {
+    // Force HTTPS in production (http→https 301 would turn POST into GET and break payments)
+    if (
+      window.location.protocol === 'http:' &&
+      !/^(localhost|127\.0\.0\.1)$/i.test(window.location.hostname)
+    ) {
+      window.location.replace(`https://${window.location.host}${window.location.pathname}${window.location.search}`);
+      return;
+    }
+
     // Payment return URLs should not be indexed
     if (new URLSearchParams(window.location.search).has('orderId')) {
       let robots = document.querySelector('meta[name="robots"]');
