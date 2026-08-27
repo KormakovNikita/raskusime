@@ -22,11 +22,14 @@ const OPENAI_BASE_URL = (process.env.OPENAI_BASE_URL || 'https://api.openai.com/
 );
 const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 const TINKOFF_API_URL = 'https://securepay.tinkoff.ru/v2/Init';
+const TINKOFF_CANCEL_URL = 'https://securepay.tinkoff.ru/v2/Cancel';
 const AMOUNT_KOPECKS = 2900;
 const RECEIPT_ENABLED = process.env.RECEIPT_ENABLED !== 'false';
 const TINKOFF_TAXATION = process.env.TINKOFF_TAXATION || 'usn_income';
 const RECEIPT_TAX = process.env.RECEIPT_TAX || 'none';
 const RECEIPT_ITEM_NAME = process.env.RECEIPT_ITEM_NAME || 'Предсказание Раскуси';
+const REFUND_ADMIN_KEY = process.env.REFUND_ADMIN_KEY || '';
+const PAYMENT_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
 const INSECURE_TLS =
   process.env.INSECURE_TLS === 'true' || process.env.NODE_TLS_REJECT_UNAUTHORIZED === '0';
 
@@ -111,8 +114,39 @@ function requestJson(urlString, { method = 'GET', headers = {}, body, timeoutMs 
   });
 }
 
-/** @type {Map<string, { orderId: string, name: string, gender: string, question: string, status: string, paymentId?: string, createdAt: number }>} */
+/** @type {Map<string, { orderId: string, name: string, gender: string, question: string, email?: string, status: string, paymentId?: string, createdAt: number }>} */
 const orders = new Map();
+
+/**
+ * Kept after fortune delivery so support can refund by PaymentId / OrderId.
+ * @type {Map<string, { orderId: string, paymentId: string, email: string, amount: number, status: string, createdAt: number, refundedAt?: number }>}
+ */
+const payments = new Map();
+
+function rememberPayment(record) {
+  if (!record?.paymentId) return;
+  payments.set(String(record.paymentId), {
+    orderId: record.orderId,
+    paymentId: String(record.paymentId),
+    email: record.email || '',
+    amount: record.amount || AMOUNT_KOPECKS,
+    status: record.status || 'created',
+    createdAt: record.createdAt || Date.now(),
+    refundedAt: record.refundedAt,
+  });
+}
+
+function findPayment({ paymentId, orderId }) {
+  if (paymentId && payments.has(String(paymentId))) {
+    return payments.get(String(paymentId));
+  }
+  if (orderId) {
+    for (const payment of payments.values()) {
+      if (payment.orderId === orderId) return payment;
+    }
+  }
+  return null;
+}
 
 const SYSTEM_PROMPT = `Ты пишешь записки из китайского печенья: короткие предсказания-ориентиры.
 
@@ -426,6 +460,15 @@ app.post('/api/create-payment', async (req, res) => {
       orders.set(orderId, order);
     }
 
+    rememberPayment({
+      orderId,
+      paymentId: data.PaymentId,
+      email,
+      amount: AMOUNT_KOPECKS,
+      status: 'created',
+      createdAt: Date.now(),
+    });
+
     return res.json({
       success: true,
       orderId,
@@ -464,6 +507,19 @@ app.post('/api/payment-webhook', (req, res) => {
       order.status = 'paid';
       if (payload.PaymentId) order.paymentId = payload.PaymentId;
       orders.set(orderId, order);
+
+      const paymentId = payload.PaymentId || order.paymentId;
+      if (paymentId) {
+        const existing = findPayment({ paymentId, orderId });
+        rememberPayment({
+          orderId,
+          paymentId,
+          email: order.email || existing?.email || '',
+          amount: existing?.amount || AMOUNT_KOPECKS,
+          status: 'paid',
+          createdAt: existing?.createdAt || order.createdAt || Date.now(),
+        });
+      }
     }
 
     return res.status(200).send('OK');
@@ -532,6 +588,18 @@ app.get('/api/get-fortune', async (req, res) => {
 
     orders.delete(orderId);
 
+    if (order.paymentId) {
+      const existing = findPayment({ paymentId: order.paymentId, orderId });
+      rememberPayment({
+        orderId,
+        paymentId: order.paymentId,
+        email: order.email || existing?.email || '',
+        amount: existing?.amount || AMOUNT_KOPECKS,
+        status: 'fulfilled',
+        createdAt: existing?.createdAt || order.createdAt || Date.now(),
+      });
+    }
+
     return res.json({
       success: true,
       fortune: result.text,
@@ -594,6 +662,18 @@ app.post('/api/retry-fortune', async (req, res) => {
 
     orders.delete(orderId);
 
+    if (order.paymentId) {
+      const existing = findPayment({ paymentId: order.paymentId, orderId });
+      rememberPayment({
+        orderId,
+        paymentId: order.paymentId,
+        email: order.email || existing?.email || '',
+        amount: existing?.amount || AMOUNT_KOPECKS,
+        status: 'fulfilled',
+        createdAt: existing?.createdAt || order.createdAt || Date.now(),
+      });
+    }
+
     return res.json({
       success: true,
       fortune: result.text,
@@ -606,6 +686,117 @@ app.post('/api/retry-fortune', async (req, res) => {
     return res.status(500).json({
       success: false,
       error: 'Не удалось получить предсказание. Попробуйте позже.',
+    });
+  }
+});
+
+/**
+ * Full refund via T-Bank Cancel.
+ * For online cash register full refund — do NOT send Receipt (bank forms return check).
+ * Auth: header X-Refund-Key must match REFUND_ADMIN_KEY.
+ */
+app.post('/api/refund', async (req, res) => {
+  try {
+    if (isPlaceholder(REFUND_ADMIN_KEY)) {
+      return res.status(404).json({ success: false, error: 'Not found' });
+    }
+
+    const provided =
+      req.get('x-refund-key') ||
+      (typeof req.body?.adminKey === 'string' ? req.body.adminKey : '');
+    if (!provided || provided !== REFUND_ADMIN_KEY) {
+      return res.status(403).json({ success: false, error: 'Forbidden' });
+    }
+
+    if (DEMO_MODE) {
+      return res.status(400).json({
+        success: false,
+        error: 'Возврат через T-Bank недоступен в демо-режиме.',
+      });
+    }
+
+    const paymentId =
+      typeof req.body?.paymentId === 'string' ? req.body.paymentId.trim() : '';
+    const orderId = typeof req.body?.orderId === 'string' ? req.body.orderId.trim() : '';
+    const payment = findPayment({ paymentId, orderId });
+
+    const resolvedPaymentId = paymentId || payment?.paymentId;
+    if (!resolvedPaymentId) {
+      return res.status(404).json({
+        success: false,
+        error: 'Платёж не найден. Укажите PaymentId из кабинета Т-Банка.',
+      });
+    }
+
+    if (payment?.status === 'refunded') {
+      return res.json({
+        success: true,
+        alreadyRefunded: true,
+        paymentId: resolvedPaymentId,
+        orderId: payment.orderId,
+      });
+    }
+
+    const cancelParams = {
+      TerminalKey: TINKOFF_TERMINAL_KEY,
+      PaymentId: String(resolvedPaymentId),
+    };
+    cancelParams.Token = generateTinkoffToken(cancelParams, TINKOFF_SECRET_PASSWORD);
+
+    let cancelResponse;
+    try {
+      cancelResponse = await requestJson(TINKOFF_CANCEL_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: cancelParams,
+        timeoutMs: 20000,
+      });
+    } catch (err) {
+      console.error('Tinkoff Cancel fetch failed:', err);
+      return res.status(502).json({
+        success: false,
+        error: 'Не удалось связаться с платёжным шлюзом.',
+        detail: err.message,
+      });
+    }
+
+    const data = cancelResponse.json || {};
+    if (!cancelResponse.ok || !data.Success) {
+      console.error('Tinkoff Cancel failed:', data);
+      return res.status(502).json({
+        success: false,
+        error: data.Message || data.Details || 'Возврат не выполнен.',
+        detail: data.ErrorCode ? `ErrorCode ${data.ErrorCode}` : undefined,
+        status: data.Status,
+      });
+    }
+
+    rememberPayment({
+      orderId: payment?.orderId || orderId || '',
+      paymentId: resolvedPaymentId,
+      email: payment?.email || '',
+      amount: payment?.amount || AMOUNT_KOPECKS,
+      status: 'refunded',
+      createdAt: payment?.createdAt || Date.now(),
+      refundedAt: Date.now(),
+    });
+
+    if (payment?.orderId && orders.has(payment.orderId)) {
+      orders.delete(payment.orderId);
+    }
+
+    return res.json({
+      success: true,
+      paymentId: resolvedPaymentId,
+      orderId: payment?.orderId || orderId || null,
+      status: data.Status,
+    });
+  } catch (err) {
+    console.error('refund error:', err);
+    return res.status(500).json({
+      success: false,
+      error: 'Внутренняя ошибка при возврате.',
+      detail: err.message,
     });
   }
 });
@@ -623,6 +814,7 @@ app.get('/api/health', (_req, res) => {
     insecureTls: INSECURE_TLS,
     receiptEnabled: RECEIPT_ENABLED,
     taxation: TINKOFF_TAXATION,
+    refundApiEnabled: !isPlaceholder(REFUND_ADMIN_KEY),
   });
 });
 
@@ -634,12 +826,17 @@ app.get('*', (req, res) => {
   sendPublicHtml(res, 'index.html');
 });
 
-// Cleanup stale pending orders (1 hour)
+// Cleanup stale pending orders (1 hour) and old payment records (7 days)
 setInterval(() => {
   const now = Date.now();
   for (const [id, order] of orders.entries()) {
     if (now - order.createdAt > 60 * 60 * 1000) {
       orders.delete(id);
+    }
+  }
+  for (const [id, payment] of payments.entries()) {
+    if (now - payment.createdAt > PAYMENT_RETENTION_MS) {
+      payments.delete(id);
     }
   }
 }, 15 * 60 * 1000).unref();
@@ -650,4 +847,5 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`DEMO_MODE=${DEMO_MODE}`);
   console.log(`AI_ENABLED=${AI_ENABLED} model=${OPENAI_MODEL}`);
   console.log(`INSECURE_TLS=${INSECURE_TLS}`);
+  console.log(`REFUND_API=${!isPlaceholder(REFUND_ADMIN_KEY)}`);
 });

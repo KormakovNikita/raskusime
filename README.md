@@ -42,6 +42,24 @@ npm run dev
 | `TINKOFF_TAXATION` | СНО в чеке: `usn_income` / `usn_income_outcome` / `osn` / `patent` / `esn` |
 | `RECEIPT_TAX` | Ставка НДС в позиции: для УСН без НДС — `none` |
 | `RECEIPT_ITEM_NAME` | Название услуги в чеке |
+| `REFUND_ADMIN_KEY` | Секрет для `POST /api/refund` (полный возврат через Cancel) |
+
+### Возврат средств
+
+В оферте возврат описан через обращение на `support@…`. Технически полный возврат — метод Т-Банка **Cancel** без `Receipt` (чек возврата касса сформирует сама).
+
+1. В `.env` задайте длинный секрет: `REFUND_ADMIN_KEY=...`
+2. `pm2 restart raskusi`
+3. Вернуть платёж:
+   ```bash
+   curl -s -X POST https://raskusime.ru/api/refund \
+     -H 'Content-Type: application/json' \
+     -H 'X-Refund-Key: ваш_секрет' \
+     -d '{"paymentId":"9129913377"}'
+   ```
+   Можно вместо `paymentId` передать `orderId`, если платёж ещё есть в памяти сервера (до 7 дней и до рестарта PM2).
+
+PaymentId также виден в кабинете Т-Банка.
 
 Если `OPENAI_API_KEY` не задан, сервер временно отдаёт локальный шаблон. После добавления ключа перезапустите сервер — предсказания пойдут через LLM.
 
