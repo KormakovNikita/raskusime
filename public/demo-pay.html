@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Оплата — Раскуси (демо)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              ink: '#121212',
+              sand: '#c4a574',
+              parchment: '#f7f1e6',
+            },
+          },
+        },
+      };
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: Inter, system-ui, sans-serif;
+        background: #121212;
+        color: #f5f5f5;
+      }
+    </style>
+  </head>
+  <body class="min-h-screen flex items-center justify-center px-5">
+    <div class="w-full max-w-sm border border-white/10 p-8 space-y-6">
+      <p class="text-[11px] tracking-[0.3em] text-white/35 uppercase">T-Pay · демо</p>
+      <h1 class="text-xl font-medium text-sand">Подтверждение оплаты</h1>
+      <p class="text-sm text-white/50 leading-relaxed">
+        Это имитация эквайринга Т-Банка. Реальные средства не списываются. После подтверждения вы
+        вернётесь на сайт с готовым предсказанием.
+      </p>
+      <p class="text-2xl font-medium tracking-wide">29 ₽</p>
+      <p id="error" class="hidden text-sm text-red-300"></p>
+      <button
+        id="confirm"
+        type="button"
+        class="w-full py-3.5 bg-sand text-ink text-sm font-medium hover:brightness-110 transition"
+      >
+        Оплатить 29 ₽
+      </button>
+      <a href="/" class="block text-center text-xs text-white/30 hover:text-white/50 transition"
+        >Отмена</a
+      >
+    </div>
+    <script>
+      const params = new URLSearchParams(window.location.search);
+      const orderId = params.get('orderId');
+      const errorEl = document.getElementById('error');
+      const btn = document.getElementById('confirm');
+
+      if (!orderId) {
+        errorEl.textContent = 'Не указан идентификатор заказа.';
+        errorEl.classList.remove('hidden');
+        btn.disabled = true;
+      }
+
+      btn.addEventListener('click', async () => {
+        btn.disabled = true;
+        btn.textContent = 'Обработка...';
+        errorEl.classList.add('hidden');
+
+        try {
+          const res = await fetch('/api/demo-confirm', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderId }),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok || !data.success) {
+            throw new Error(data.error || 'Ошибка подтверждения');
+          }
+          window.location.href = `/?orderId=${encodeURIComponent(orderId)}&status=success`;
+        } catch (err) {
+          errorEl.textContent = err.message || 'Сеть недоступна. Попробуйте снова.';
+          errorEl.classList.remove('hidden');
+          btn.disabled = false;
+          btn.textContent = 'Оплатить 29 ₽';
+        }
+      });
+    </script>
+  </body>
+</html>

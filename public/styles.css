@@ -1,0 +1,140 @@
+/* Raskusi — premium dark landing */
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: #121212;
+}
+
+.field-line {
+  border-radius: 0;
+}
+
+textarea.field-line {
+  padding-left: 0.15rem;
+  padding-right: 0.15rem;
+  border-radius: 2px;
+}
+
+.gender-btn.is-active {
+  border-color: #c4a574;
+  color: #d4bc8e;
+  background: rgba(196, 165, 116, 0.08);
+}
+
+.cookie-wrap:hover .cookie-svg {
+  animation: cookie-sway 1.6s ease-in-out infinite;
+}
+
+@keyframes cookie-sway {
+  0%,
+  100% {
+    transform: rotate(-2.5deg) translateY(0);
+  }
+  50% {
+    transform: rotate(2.5deg) translateY(-3px);
+  }
+}
+
+.cookie-wrap.is-cracking .cookie-svg {
+  animation: none;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+
+.cookie-wrap.is-cracking #cookie-left,
+.cookie-wrap.is-cracking #cookie-right {
+  opacity: 1;
+}
+
+.cookie-wrap.is-cracking #cookie-left {
+  animation: crack-left 1.1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.cookie-wrap.is-cracking #cookie-right {
+  animation: crack-right 1.1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes crack-left {
+  0% {
+    transform: translateX(0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-42%) rotate(-12deg);
+    opacity: 0.85;
+  }
+}
+
+@keyframes crack-right {
+  0% {
+    transform: translateX(0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(42%) rotate(12deg);
+    opacity: 0.85;
+  }
+}
+
+.fortune-slip.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+  animation: slip-in 0.9s ease forwards;
+}
+
+@keyframes slip-in {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -46%) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+.fortune-slip {
+  border-left: 1px solid rgba(42, 37, 32, 0.08);
+  border-right: 1px solid rgba(42, 37, 32, 0.08);
+}
+
+.fortune-inner p + p {
+  border-top: 1px solid rgba(42, 37, 32, 0.1);
+  padding-top: 1.15rem;
+}
+
+.loader-ring {
+  width: 36px;
+  height: 36px;
+  border: 1.5px solid rgba(196, 165, 116, 0.2);
+  border-top-color: #c4a574;
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.btn-gold:active {
+  transform: translateY(1px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cookie-wrap:hover .cookie-svg,
+  .cookie-wrap.is-cracking #cookie-left,
+  .cookie-wrap.is-cracking #cookie-right,
+  .fortune-slip.is-visible,
+  .loader-ring {
+    animation: none !important;
+  }
+
+  .fortune-slip.is-visible {
+    opacity: 1;
+  }
+}
