@@ -1,6 +1,7 @@
 require('dotenv').config();
 
 const crypto = require('crypto');
+const fs = require('fs');
 const path = require('path');
 const express = require('express');
 const cors = require('cors');
@@ -59,7 +60,29 @@ const SYSTEM_PROMPT = `Ты пишешь записки из китайског�
 app.use(cors());
 app.use(express.json({ limit: '100kb' }));
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, 'public')));
+
+function renderPublic(fileName) {
+  const filePath = path.join(__dirname, 'public', fileName);
+  return fs.readFileSync(filePath, 'utf8').split('{{BASE_URL}}').join(BASE_URL);
+}
+
+function sendPublicHtml(res, fileName, status = 200) {
+  res.status(status).type('html').send(renderPublic(fileName));
+}
+
+app.get('/robots.txt', (_req, res) => {
+  res.type('text/plain').send(renderPublic('robots.txt'));
+});
+
+app.get('/sitemap.xml', (_req, res) => {
+  res.type('application/xml').send(renderPublic('sitemap.xml'));
+});
+
+app.get(['/', '/index.html'], (_req, res) => sendPublicHtml(res, 'index.html'));
+app.get('/offer.html', (_req, res) => sendPublicHtml(res, 'offer.html'));
+app.get('/privacy.html', (_req, res) => sendPublicHtml(res, 'privacy.html'));
+
+app.use(express.static(path.join(__dirname, 'public'), { index: false }));
 
 /**
  * T-Bank (Tinkoff) Token: root params except Token/Receipt/DATA,
@@ -479,9 +502,12 @@ app.get('/api/health', (_req, res) => {
   });
 });
 
-// SPA fallback
-app.get('*', (_req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+// SPA / unknown paths → home (payment return URLs keep query string client-side)
+app.get('*', (req, res) => {
+  if (req.path.startsWith('/api/')) {
+    return res.status(404).json({ success: false, error: 'Not found' });
+  }
+  sendPublicHtml(res, 'index.html');
 });
 
 // Cleanup stale pending orders (1 hour)

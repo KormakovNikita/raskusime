@@ -69,3 +69,24 @@ npm run dev
 2. Установите `DEMO_MODE=false`.
 3. Пропишите публичный `BASE_URL` (HTTPS), доступный для вебхуков Т-Банка.
 4. В личном кабинете терминала укажите Notification URL: `{BASE_URL}/api/payment-webhook`.
+
+## SEO — этап 1 (сделано)
+
+Уже в коде:
+
+- title / description / canonical / Open Graph / robots
+- JSON-LD: WebSite, Organization, Product/Offer, FAQPage
+- H1, блоки «Как это работает», «Что такое Раскуси», FAQ
+- `robots.txt`, `sitemap.xml` (подставляют `BASE_URL`)
+- страницы `/offer.html` и `/privacy.html`
+- `noindex` для демо-оплаты и URL с `orderId`
+- favicon.svg
+
+## SEO — следующие шаги (вручную / этап 2)
+
+1. Купить и привязать домен, включить HTTPS, выставить `BASE_URL=https://ваш-домен`.
+2. Добавить сайт в [Google Search Console](https://search.google.com/search-console) и [Яндекс.Вебмастер](https://webmaster.yandex.ru), отправить sitemap: `{BASE_URL}/sitemap.xml`.
+3. Подставить реальные реквизиты в оферту и политику конфиденциальности.
+4. Сделать OG-картинку 1200×630 (PNG/JPG) и указать её в `og:image`.
+5. Этап 2 по скорости: убрать Tailwind CDN, self-host шрифты (Core Web Vitals).
+6. Этап 3 по контенту: статьи/кластеры запросов под «предсказание онлайн».

@@ -3,11 +3,40 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Раскуси — психологические подсказки</title>
+    <title>Раскуси — предсказание онлайн за 29 ₽ | психологическая записка</title>
     <meta
       name="description"
-      content="Лаконичные психологические предсказания в стиле китайского печенья с запиской. 29 ₽."
+      content="Раскуси — короткое психологическое предсказание в стиле китайского печенья с запиской. Не магия, а метафора и совет на день. Одно предсказание — 29 ₽ через T-Pay."
     />
+    <meta
+      name="keywords"
+      content="предсказание онлайн, печенье с предсказанием, психологическая подсказка, записка на день, Раскуси"
+    />
+    <meta name="robots" content="index,follow,max-image-preview:large" />
+    <link rel="canonical" href="{{BASE_URL}}/" />
+
+    <meta property="og:locale" content="ru_RU" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Раскуси" />
+    <meta property="og:title" content="Раскуси — предсказание онлайн за 29 ₽" />
+    <meta
+      property="og:description"
+      content="Лаконичная психологическая записка в стиле китайского печенья. Один ответ — 29 ₽."
+    />
+    <meta property="og:url" content="{{BASE_URL}}/" />
+    <meta property="og:image" content="{{BASE_URL}}/favicon.svg" />
+
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Раскуси — предсказание онлайн за 29 ₽" />
+    <meta
+      name="twitter:description"
+      content="Короткое психологическое предсказание-записка. Не магия — метафора и шаг на день."
+    />
+
+    <meta name="theme-color" content="#121212" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/favicon.svg" />
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -36,6 +65,81 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="/styles.css" />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "@id": "{{BASE_URL}}/#website",
+            "url": "{{BASE_URL}}/",
+            "name": "Раскуси",
+            "description": "Психологические предсказания в стиле китайского печенья с запиской",
+            "inLanguage": "ru-RU",
+            "publisher": { "@id": "{{BASE_URL}}/#organization" }
+          },
+          {
+            "@type": "Organization",
+            "@id": "{{BASE_URL}}/#organization",
+            "name": "Раскуси",
+            "alternateName": "Raskusi",
+            "url": "{{BASE_URL}}/",
+            "logo": "{{BASE_URL}}/favicon.svg"
+          },
+          {
+            "@type": "Product",
+            "name": "Предсказание Раскуси",
+            "description": "Одно лаконичное психологическое предсказание-записка после оплаты.",
+            "brand": { "@type": "Brand", "name": "Раскуси" },
+            "offers": {
+              "@type": "Offer",
+              "price": "29",
+              "priceCurrency": "RUB",
+              "availability": "https://schema.org/InStock",
+              "url": "{{BASE_URL}}/"
+            }
+          },
+          {
+            "@type": "FAQPage",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "Что такое Раскуси?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Раскуси — сервис коротких психологических предсказаний в формате записки из китайского печенья. Это не мистика, а метафора и практический ориентир на день."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Сколько стоит предсказание?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Одно предсказание стоит 29 рублей. Оплата проходит через T-Pay или банковскую карту."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Нужно ли обязательно задавать вопрос?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Нет. Имя, пол и вопрос необязательны. Если оставить поля пустыми, вы получите универсальную записку."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Это гадание?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Нет. Сервис не обещает предвидеть будущее. Текст строится как психологическая подсказка и короткий шаг к действию."
+                }
+              }
+            ]
+          }
+        ]
+      }
+    </script>
   </head>
   <body class="bg-ink text-white font-sans antialiased min-h-screen overflow-x-hidden">
     <div class="atmosphere" aria-hidden="true">
@@ -57,11 +161,22 @@
         </p>
       </header>
 
-      <main class="flex-1 flex flex-col items-center justify-center px-5 sm:px-8 pb-16 pt-4">
-        <div
-          id="cookie-stage"
-          class="relative z-0 w-full max-w-lg flex items-center justify-center mb-10 sm:mb-12"
+      <main>
+        <section
+          id="app-stage"
+          class="flex flex-col items-center justify-center px-5 sm:px-8 pb-16 pt-4 min-h-[75vh]"
+          aria-label="Получить предсказание"
         >
+          <h1 class="hero-brand">Раскуси</h1>
+          <p class="hero-tagline">
+            Короткое предсказание-записка. Не магия — психологическая метафора за 29 ₽.
+          </p>
+
+          <!-- Cookie stage -->
+          <div
+            id="cookie-stage"
+            class="relative z-0 w-full max-w-lg flex items-center justify-center mb-10 sm:mb-12"
+          >
           <div class="cookie-glow" aria-hidden="true"></div>
 
           <div id="cookie-wrap" class="cookie-wrap relative w-56 h-40 sm:w-72 sm:h-48">
@@ -364,10 +479,92 @@
             Спросить снова
           </button>
         </section>
+        </section>
+
+        <section id="how" class="seo-section" aria-labelledby="how-title">
+          <div class="seo-inner">
+            <h2 id="how-title">Как это работает</h2>
+            <p class="seo-lead">Три шага от вопроса до записки.</p>
+            <ol class="seo-steps">
+              <li>
+                <strong>Сформулируйте запрос</strong>
+                <span>Имя, пол и вопрос необязательны — можно получить случайную записку.</span>
+              </li>
+              <li>
+                <strong>Оплатите 29 ₽</strong>
+                <span>Доступ открывается только после успешной оплаты через T-Pay или карту.</span>
+              </li>
+              <li>
+                <strong>Раскусите печенье</strong>
+                <span>Получите короткое предсказание из трёх строк: образ, смысл и шаг на день.</span>
+              </li>
+            </ol>
+          </div>
+        </section>
+
+        <section id="about" class="seo-section seo-section-alt" aria-labelledby="about-title">
+          <div class="seo-inner">
+            <h2 id="about-title">Что такое Раскуси</h2>
+            <p>
+              Раскуси (Raskusi) — сервис лаконичных психологических предсказаний в формате китайского
+              печенья с запиской. Мы не обещаем магию и не предсказываем судьбу. Вместо этого даём
+              ёмкую метафору и конкретный ориентир, который помогает посмотреть на ситуацию иначе.
+            </p>
+            <p>
+              Один ответ стоит строго 29 рублей. Это осознанный микроплатёж: меньше импульсивных
+              кликов, больше внимания к формулировке вопроса.
+            </p>
+          </div>
+        </section>
+
+        <section id="faq" class="seo-section" aria-labelledby="faq-title">
+          <div class="seo-inner">
+            <h2 id="faq-title">Частые вопросы</h2>
+            <div class="faq-list">
+              <details class="faq-item">
+                <summary>Сколько стоит предсказание?</summary>
+                <p>Ровно 29 ₽ за одну записку. Повторная покупка оформляется отдельно.</p>
+              </details>
+              <details class="faq-item">
+                <summary>Нужно ли писать вопрос?</summary>
+                <p>
+                  Нет. Можно оставить поле пустым и получить универсальное предсказание. Если
+                  укажете контекст — ответ будет точнее.
+                </p>
+              </details>
+              <details class="faq-item">
+                <summary>Это гадание или эзотерика?</summary>
+                <p>
+                  Нет. Раскуси использует психологические метафоры и короткие практические шаги, а
+                  не мистические обещания будущего.
+                </p>
+              </details>
+              <details class="faq-item">
+                <summary>Что если печенье не сможет ответить?</summary>
+                <p>
+                  На опасные или деструктивные запросы сервис отказывает в содержательном ответе.
+                  Вы можете переформулировать вопрос без повторной оплаты.
+                </p>
+              </details>
+              <details class="faq-item">
+                <summary>Как проходит оплата?</summary>
+                <p>
+                  Через интернет-эквайринг Т-Банка: T-Pay или банковская карта. Текст открывается
+                  только после подтверждения платежа.
+                </p>
+              </details>
+            </div>
+          </div>
+        </section>
       </main>
 
-      <footer class="px-5 sm:px-8 py-6 text-center text-[10px] sm:text-[11px] text-white/20 tracking-wide">
-        Не магия — психологические метафоры. Один ответ — 29 ₽.
+      <footer class="site-footer">
+        <p>Не магия — психологические метафоры. Один ответ — 29 ₽.</p>
+        <nav class="footer-nav" aria-label="Юридическая информация">
+          <a href="/offer.html">Оферта</a>
+          <a href="/privacy.html">Конфиденциальность</a>
+          <a href="/#faq">FAQ</a>
+        </nav>
       </footer>
     </div>
 

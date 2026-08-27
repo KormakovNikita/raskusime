@@ -488,6 +488,17 @@
   });
 
   async function init() {
+    // Payment return URLs should not be indexed
+    if (new URLSearchParams(window.location.search).has('orderId')) {
+      let robots = document.querySelector('meta[name="robots"]');
+      if (!robots) {
+        robots = document.createElement('meta');
+        robots.setAttribute('name', 'robots');
+        document.head.appendChild(robots);
+      }
+      robots.setAttribute('content', 'noindex,nofollow');
+    }
+
     try {
       const health = await fetch('/api/health').then((r) => r.json());
       if (health.demoMode) {

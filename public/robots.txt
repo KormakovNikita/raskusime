@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /demo-pay.html
+Disallow: /api/
+
+Sitemap: {{BASE_URL}}/sitemap.xml
