@@ -33,12 +33,28 @@ npm run dev
 | `BASE_URL` | Публичный URL приложения (для SuccessURL / NotificationURL) |
 | `TINKOFF_TERMINAL_KEY` | Ключ терминала Т-Банка |
 | `TINKOFF_SECRET_PASSWORD` | Пароль терминала для подписи Token |
-| `OPENAI_API_KEY` | Ключ OpenAI (обязателен для живой генерации) |
-| `OPENAI_MODEL` | Модель Chat Completions (`gpt-4o-mini` по умолчанию) |
-| `OPENAI_BASE_URL` | Базовый URL API (`https://api.openai.com/v1` или совместимый) |
+| `OPENAI_API_KEY` | Ключ LLM (OpenAI / DeepSeek / ProxyAPI и т.п.) |
+| `OPENAI_MODEL` | Модель Chat Completions |
+| `OPENAI_BASE_URL` | Базовый URL API (совместимый с OpenAI Chat Completions) |
 | `DEMO_MODE` | `true` — симуляция оплаты без реального эквайринга |
 
-Если `OPENAI_API_KEY` не задан, сервер временно отдаёт локальный шаблон. После добавления ключа перезапустите `npm start` — предсказания пойдут через LLM.
+Если `OPENAI_API_KEY` не задан, сервер временно отдаёт локальный шаблон. После добавления ключа перезапустите сервер — предсказания пойдут через LLM.
+
+### LLM из РФ (DeepSeek)
+
+Прямой OpenAI с российских VPS часто отвечает `403 unsupported_country_region_territory`. DeepSeek API обычно доступен без VPN и совместим с тем же кодом.
+
+1. Зарегистрируйтесь на [platform.deepseek.com](https://platform.deepseek.com), создайте API key, пополните баланс.
+2. В `.env` на VPS:
+   ```env
+   OPENAI_API_KEY=sk-...ключ_deepseek...
+   OPENAI_BASE_URL=https://api.deepseek.com/v1
+   OPENAI_MODEL=deepseek-chat
+   ```
+   Если `deepseek-chat` недоступен — попробуйте `deepseek-v4-flash`.
+3. `pm2 restart raskusi`
+
+Оплата DeepSeek из РФ бывает сложной (часто нужна иностранная карта / AliPay). Альтернатива с оплатой в рублях — ProxyAPI или похожий агрегатор.
 
 Если ключи Т-Банка не заданы (или оставлены плейсхолдеры), сервер автоматически работает в **демо-режиме**: платёж подтверждается на локальной странице без списания средств.
 
