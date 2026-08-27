@@ -1,15 +1,11 @@
 require('dotenv').config();
 
-// Some VPS images ship a broken/intercepted CA chain. Prefer fixing
-// ca-certificates on the host; this flag is an explicit last resort.
-if (process.env.INSECURE_TLS === 'true') {
-  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-  console.warn('WARNING: INSECURE_TLS=true — TLS certificate verification is disabled');
-}
-
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
+const https = require('https');
+const http = require('http');
+const { URL } = require('url');
 const express = require('express');
 const cors = require('cors');
 const { v4: uuidv4 } = require('uuid');
@@ -27,6 +23,12 @@ const OPENAI_BASE_URL = (process.env.OPENAI_BASE_URL || 'https://api.openai.com/
 const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 const TINKOFF_API_URL = 'https://securepay.tinkoff.ru/v2/Init';
 const AMOUNT_KOPECKS = 2900;
+const INSECURE_TLS =
+  process.env.INSECURE_TLS === 'true' || process.env.NODE_TLS_REJECT_UNAUTHORIZED === '0';
+
+if (INSECURE_TLS) {
+  console.warn('WARNING: INSECURE_TLS enabled — outbound TLS verification is disabled');
+}
 
 const isPlaceholder = (value) =>
   !value ||
@@ -39,6 +41,71 @@ const DEMO_MODE =
   process.env.DEMO_MODE === 'true' ||
   isPlaceholder(TINKOFF_TERMINAL_KEY) ||
   isPlaceholder(TINKOFF_SECRET_PASSWORD);
+
+/**
+ * Outbound JSON HTTP(S) request. Uses Node https/http instead of fetch so we can
+ * disable TLS verification on broken VPS CA chains (INSECURE_TLS=true).
+ */
+function requestJson(urlString, { method = 'GET', headers = {}, body, timeoutMs = 20000 } = {}) {
+  return new Promise((resolve, reject) => {
+    let parsed;
+    try {
+      parsed = new URL(urlString);
+    } catch (err) {
+      reject(err);
+      return;
+    }
+
+    const isHttps = parsed.protocol === 'https:';
+    const lib = isHttps ? https : http;
+    const payload = body == null ? null : typeof body === 'string' ? body : JSON.stringify(body);
+    const reqHeaders = { ...headers };
+    if (payload != null && !reqHeaders['Content-Type'] && !reqHeaders['content-type']) {
+      reqHeaders['Content-Type'] = 'application/json';
+    }
+    if (payload != null) {
+      reqHeaders['Content-Length'] = Buffer.byteLength(payload);
+    }
+
+    const req = lib.request(
+      {
+        protocol: parsed.protocol,
+        hostname: parsed.hostname,
+        port: parsed.port || (isHttps ? 443 : 80),
+        path: `${parsed.pathname}${parsed.search}`,
+        method,
+        headers: reqHeaders,
+        rejectUnauthorized: isHttps ? !INSECURE_TLS : undefined,
+      },
+      (res) => {
+        const chunks = [];
+        res.on('data', (chunk) => chunks.push(chunk));
+        res.on('end', () => {
+          const text = Buffer.concat(chunks).toString('utf8');
+          let json = null;
+          try {
+            json = text ? JSON.parse(text) : null;
+          } catch {
+            json = null;
+          }
+          resolve({
+            ok: res.statusCode >= 200 && res.statusCode < 300,
+            status: res.statusCode || 0,
+            text,
+            json,
+          });
+        });
+      }
+    );
+
+    req.setTimeout(timeoutMs, () => {
+      req.destroy(new Error(`Request timeout after ${timeoutMs}ms`));
+    });
+    req.on('error', reject);
+    if (payload != null) req.write(payload);
+    req.end();
+  });
+}
 
 /** @type {Map<string, { orderId: string, name: string, gender: string, question: string, status: string, paymentId?: string, createdAt: number }>} */
 const orders = new Map();
@@ -198,17 +265,14 @@ async function generateFortune(userData) {
     return { text: personalizeFallback(userData), source: 'fallback' };
   }
 
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 30000);
-
   try {
-    const response = await fetch(`${OPENAI_BASE_URL}/chat/completions`, {
+    const response = await requestJson(`${OPENAI_BASE_URL}/chat/completions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${OPENAI_API_KEY}`,
       },
-      body: JSON.stringify({
+      body: {
         model: OPENAI_MODEL,
         temperature: 0.85,
         max_tokens: 180,
@@ -216,18 +280,16 @@ async function generateFortune(userData) {
           { role: 'system', content: SYSTEM_PROMPT },
           { role: 'user', content: buildUserPrompt(userData) },
         ],
-      }),
-      signal: controller.signal,
+      },
+      timeoutMs: 30000,
     });
 
     if (!response.ok) {
-      const errText = await response.text().catch(() => '');
-      console.error('OpenAI error:', response.status, errText.slice(0, 500));
+      console.error('OpenAI error:', response.status, String(response.text || '').slice(0, 500));
       throw new Error(`LLM HTTP ${response.status}`);
     }
 
-    const data = await response.json();
-    const text = cleanFortuneText(data?.choices?.[0]?.message?.content);
+    const text = cleanFortuneText(response.json?.choices?.[0]?.message?.content);
     if (!text) {
       throw new Error('Empty LLM response');
     }
@@ -236,8 +298,6 @@ async function generateFortune(userData) {
   } catch (err) {
     console.error('OpenAI request failed:', err.message);
     return { text: personalizeFallback(userData), source: 'fallback' };
-  } finally {
-    clearTimeout(timeout);
   }
 }
 
@@ -277,19 +337,15 @@ app.post('/api/create-payment', async (req, res) => {
 
     initParams.Token = generateTinkoffToken(initParams, TINKOFF_SECRET_PASSWORD);
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 20000);
-
     let tinkoffResponse;
     try {
-      tinkoffResponse = await fetch(TINKOFF_API_URL, {
+      tinkoffResponse = await requestJson(TINKOFF_API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(initParams),
-        signal: controller.signal,
+        body: initParams,
+        timeoutMs: 20000,
       });
     } catch (fetchErr) {
-      clearTimeout(timeout);
       orders.delete(orderId);
       console.error('Tinkoff fetch failed:', fetchErr);
       return res.status(502).json({
@@ -297,14 +353,15 @@ app.post('/api/create-payment', async (req, res) => {
         error: 'Не удалось связаться с платёжным шлюзом. Попробуйте позже.',
         detail: fetchErr.message,
       });
-    } finally {
-      clearTimeout(timeout);
     }
 
     if (!tinkoffResponse.ok) {
-      const bodyText = await tinkoffResponse.text().catch(() => '');
       orders.delete(orderId);
-      console.error('Tinkoff HTTP error:', tinkoffResponse.status, bodyText.slice(0, 500));
+      console.error(
+        'Tinkoff HTTP error:',
+        tinkoffResponse.status,
+        String(tinkoffResponse.text || '').slice(0, 500)
+      );
       return res.status(502).json({
         success: false,
         error: 'Не удалось связаться с платёжным шлюзом. Попробуйте позже.',
@@ -312,7 +369,7 @@ app.post('/api/create-payment', async (req, res) => {
       });
     }
 
-    const data = await tinkoffResponse.json();
+    const data = tinkoffResponse.json || {};
 
     if (!data.Success || !data.PaymentURL) {
       orders.delete(orderId);
@@ -524,6 +581,7 @@ app.get('/api/health', (_req, res) => {
     tinkoffKeyLength: TINKOFF_TERMINAL_KEY.length,
     tinkoffPasswordLength: TINKOFF_SECRET_PASSWORD.length,
     baseUrl: BASE_URL,
+    insecureTls: INSECURE_TLS,
   });
 });
 
@@ -550,5 +608,5 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`BASE_URL=${BASE_URL}`);
   console.log(`DEMO_MODE=${DEMO_MODE}`);
   console.log(`AI_ENABLED=${AI_ENABLED} model=${OPENAI_MODEL}`);
-  console.log(`INSECURE_TLS=${process.env.INSECURE_TLS === 'true'}`);
+  console.log(`INSECURE_TLS=${INSECURE_TLS}`);
 });
