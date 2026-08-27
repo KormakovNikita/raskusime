@@ -391,20 +391,6 @@
               />
             </label>
 
-            <label class="block">
-              <span class="sr-only">Email для чека</span>
-              <input
-                id="input-email"
-                type="email"
-                name="email"
-                autocomplete="email"
-                maxlength="64"
-                required
-                placeholder="Email для чека"
-                class="field-line w-full bg-transparent border-0 border-b border-white/20 focus:border-sand outline-none py-3 text-sm text-white/90 placeholder:text-white/30 transition-colors"
-              />
-            </label>
-
             <div>
               <p class="text-[11px] uppercase tracking-[0.2em] text-white/30 mb-3">Пол</p>
               <div class="flex gap-3" role="group" aria-label="Пол">
@@ -447,6 +433,20 @@
           >
             Раскусить за 29 ₽ через T-Pay
           </button>
+
+          <label class="block">
+            <span class="sr-only">Email для чека</span>
+            <input
+              id="input-email"
+              type="email"
+              name="email"
+              autocomplete="email"
+              maxlength="64"
+              required
+              placeholder="Email для чека"
+              class="field-line w-full bg-transparent border-0 border-b border-white/20 focus:border-sand outline-none py-3 text-sm text-white/90 placeholder:text-white/30 transition-colors"
+            />
+          </label>
 
           <p id="demo-hint" class="hidden text-center text-[11px] text-white/25 tracking-wide">
             Демо-режим: оплата симулируется без реального списания
@@ -502,7 +502,7 @@
             <ol class="seo-steps">
               <li>
                 <strong>Сформулируйте запрос</strong>
-                <span>Имя, пол и вопрос необязательны — можно получить случайную записку.</span>
+                <span>Email нужен для чека. Имя, пол и вопрос необязательны — можно получить случайную записку.</span>
               </li>
               <li>
                 <strong>Оплатите через T-Pay</strong>
