@@ -231,6 +231,7 @@ app.get('/sitemap.xml', (_req, res) => {
 app.get(['/', '/index.html'], (_req, res) => sendPublicHtml(res, 'index.html'));
 app.get('/offer.html', (_req, res) => sendPublicHtml(res, 'offer.html'));
 app.get('/privacy.html', (_req, res) => sendPublicHtml(res, 'privacy.html'));
+app.get('/consent-pd.html', (_req, res) => sendPublicHtml(res, 'consent-pd.html'));
 
 app.use(express.static(path.join(__dirname, 'public'), { index: false }));
 
