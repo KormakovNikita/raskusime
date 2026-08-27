@@ -52,6 +52,7 @@
     if (stage === 'form') {
       cookieWrap.classList.remove('is-cracking');
       cookieStage.classList.remove('is-fortune');
+      clearCrumbs();
       fortuneSlip.classList.remove('is-visible', 'relative', 'w-full');
       fortuneSlip.classList.add(
         'absolute',
@@ -89,6 +90,37 @@
     return ['Предсказание временно недоступно.', 'Попробуйте ещё раз чуть позже.', ''];
   }
 
+  function spawnCrumbs() {
+    const layer = $('crumb-layer');
+    if (!layer) return;
+    layer.innerHTML = '';
+
+    const count = 12;
+    for (let i = 0; i < count; i += 1) {
+      const crumb = document.createElement('span');
+      crumb.className = 'crumb';
+      const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.4;
+      const dist = 40 + Math.random() * 70;
+      const dx = Math.cos(angle) * dist;
+      const dy = Math.sin(angle) * dist * 0.7 + 20 + Math.random() * 30;
+      const rot = `${(Math.random() * 240 - 120).toFixed(0)}deg`;
+      const size = 4 + Math.random() * 5;
+      crumb.style.setProperty('--dx', `${dx.toFixed(1)}px`);
+      crumb.style.setProperty('--dy', `${dy.toFixed(1)}px`);
+      crumb.style.setProperty('--rot', rot);
+      crumb.style.width = `${size}px`;
+      crumb.style.height = `${size * 0.8}px`;
+      crumb.style.animationDelay = `${0.28 + Math.random() * 0.18}s`;
+      crumb.style.background = i % 2 === 0 ? '#d4bc8e' : '#a88955';
+      layer.appendChild(crumb);
+    }
+  }
+
+  function clearCrumbs() {
+    const layer = $('crumb-layer');
+    if (layer) layer.innerHTML = '';
+  }
+
   function playCrackAndShow(fortuneText) {
     const [b1, b2, b3] = parseFortuneBlocks(fortuneText);
     $('fortune-block-1').textContent = b1;
@@ -97,9 +129,9 @@
 
     clearPaymentParams();
     setStage('fortune');
+    spawnCrumbs();
     cookieWrap.classList.add('is-cracking');
 
-    // Leave absolute centering for the closed cookie; switch slip into document flow
     fortuneSlip.classList.remove(
       'absolute',
       'left-1/2',
@@ -113,7 +145,7 @@
 
     window.setTimeout(() => {
       fortuneSlip.classList.add('is-visible');
-    }, 450);
+    }, 620);
   }
 
   function stopPolling() {

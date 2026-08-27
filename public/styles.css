@@ -1,12 +1,134 @@
 /* Raskusi — premium dark landing */
 
+:root {
+  --ink: #121212;
+  --sand: #c4a574;
+  --sand-light: #d4bc8e;
+  --sand-dim: #8a7350;
+  --parchment: #f7f1e6;
+}
+
 html {
   scroll-behavior: smooth;
 }
 
 body {
-  background-color: #121212;
+  background-color: var(--ink);
+  color: #f5f5f5;
 }
+
+/* --- Atmosphere --- */
+
+.atmosphere {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  background:
+    radial-gradient(1200px 600px at 50% -10%, rgba(196, 165, 116, 0.12), transparent 55%),
+    radial-gradient(800px 500px at 80% 90%, rgba(138, 115, 80, 0.08), transparent 50%),
+    linear-gradient(180deg, #161616 0%, #121212 45%, #101010 100%);
+}
+
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.45;
+  animation: orb-drift 14s ease-in-out infinite;
+}
+
+.orb-a {
+  width: 42vw;
+  height: 42vw;
+  max-width: 420px;
+  max-height: 420px;
+  left: -8%;
+  top: 18%;
+  background: rgba(196, 165, 116, 0.16);
+}
+
+.orb-b {
+  width: 36vw;
+  height: 36vw;
+  max-width: 360px;
+  max-height: 360px;
+  right: -6%;
+  top: 42%;
+  background: rgba(168, 138, 90, 0.12);
+  animation-delay: -5s;
+  animation-duration: 18s;
+}
+
+.orb-c {
+  width: 28vw;
+  height: 28vw;
+  max-width: 280px;
+  max-height: 280px;
+  left: 35%;
+  bottom: -8%;
+  background: rgba(212, 188, 142, 0.08);
+  animation-delay: -9s;
+  animation-duration: 16s;
+}
+
+@keyframes orb-drift {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(18px, -22px) scale(1.08);
+  }
+}
+
+.grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.045;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+  mix-blend-mode: overlay;
+}
+
+.header-fade {
+  animation: fade-down 0.8s ease both;
+}
+
+@keyframes fade-down {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.logo-mark {
+  position: relative;
+}
+
+.logo-mark::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -6px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(196, 165, 116, 0.55), transparent);
+  transform: scaleX(0);
+  transform-origin: center;
+  transition: transform 0.4s ease;
+}
+
+.logo-mark:hover::after {
+  transform: scaleX(1);
+}
+
+/* --- Form --- */
 
 .field-line {
   border-radius: 0;
@@ -18,86 +140,226 @@ textarea.field-line {
   border-radius: 2px;
 }
 
+.gender-btn {
+  transition: border-color 0.25s ease, color 0.25s ease, background 0.25s ease, transform 0.2s ease;
+}
+
+.gender-btn:hover {
+  transform: translateY(-1px);
+}
+
 .gender-btn.is-active {
-  border-color: #c4a574;
-  color: #d4bc8e;
-  background: rgba(196, 165, 116, 0.08);
+  border-color: var(--sand);
+  color: var(--sand-light);
+  background: rgba(196, 165, 116, 0.1);
+  box-shadow: 0 0 0 1px rgba(196, 165, 116, 0.15);
+}
+
+.stage-panel {
+  animation: panel-in 0.55s ease both;
+}
+
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* --- Cookie --- */
+
+.cookie-glow {
+  position: absolute;
+  width: min(70vw, 340px);
+  height: min(70vw, 340px);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(212, 188, 142, 0.22) 0%, rgba(196, 165, 116, 0.08) 40%, transparent 70%);
+  animation: glow-pulse 4.5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes glow-pulse {
+  0%,
+  100% {
+    opacity: 0.7;
+    transform: scale(0.92);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+.cookie-wrap {
+  transform-origin: center center;
+  animation: cookie-float 4.2s ease-in-out infinite;
 }
 
 .cookie-wrap:hover .cookie-svg {
-  animation: cookie-sway 1.6s ease-in-out infinite;
+  animation: cookie-sway 1.5s ease-in-out infinite;
+}
+
+.drop-shadow-cookie {
+  filter: drop-shadow(0 18px 24px rgba(0, 0, 0, 0.45));
+}
+
+@keyframes cookie-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
 }
 
 @keyframes cookie-sway {
   0%,
   100% {
-    transform: rotate(-2.5deg) translateY(0);
+    transform: rotate(-3deg);
   }
   50% {
-    transform: rotate(2.5deg) translateY(-3px);
+    transform: rotate(3.5deg);
   }
 }
 
+/* Crack sequence */
+
 .cookie-wrap.is-cracking {
-  width: min(88vw, 280px);
+  width: min(88vw, 300px);
   height: auto;
   min-height: 0;
   display: flex;
   align-items: stretch;
   justify-content: center;
+  animation: none;
+}
+
+.cookie-wrap.is-cracking .cookie-glow,
+#cookie-stage.is-fortune .cookie-glow {
+  opacity: 0.35;
+  animation: none;
 }
 
 .cookie-wrap.is-cracking .cookie-svg {
-  animation: none;
-  opacity: 0;
-  transition: opacity 0.35s ease;
+  animation: cookie-precrack 0.35s ease forwards;
   pointer-events: none;
+}
+
+@keyframes cookie-precrack {
+  0% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  40% {
+    transform: scale(1.06) rotate(-1deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.98) rotate(0deg);
+    opacity: 0;
+  }
 }
 
 .cookie-wrap.is-cracking #cookie-left,
 .cookie-wrap.is-cracking #cookie-right {
   opacity: 1;
   width: 100%;
-  height: 140px;
+  height: 180px;
   top: 50%;
-  margin-top: -70px;
+  margin-top: -90px;
   z-index: 0;
+  filter: drop-shadow(0 12px 18px rgba(0, 0, 0, 0.4));
 }
 
 .cookie-wrap.is-cracking #cookie-left {
-  animation: crack-left 1.1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: crack-left 1.15s cubic-bezier(0.16, 1, 0.3, 1) 0.28s both;
 }
 
 .cookie-wrap.is-cracking #cookie-right {
-  animation: crack-right 1.1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: crack-right 1.15s cubic-bezier(0.16, 1, 0.3, 1) 0.28s both;
 }
 
 @keyframes crack-left {
   0% {
-    transform: translateX(0) rotate(0deg);
+    transform: translate(0, 0) rotate(0deg) scale(1);
+    opacity: 1;
+  }
+  30% {
+    transform: translate(-8%, -4%) rotate(-6deg) scale(1.02);
     opacity: 1;
   }
   100% {
-    transform: translateX(-48%) rotate(-12deg);
-    opacity: 0.55;
+    transform: translate(-56%, 8%) rotate(-22deg) scale(0.92);
+    opacity: 0.4;
   }
 }
 
 @keyframes crack-right {
   0% {
-    transform: translateX(0) rotate(0deg);
+    transform: translate(0, 0) rotate(0deg) scale(1);
+    opacity: 1;
+  }
+  30% {
+    transform: translate(8%, -4%) rotate(6deg) scale(1.02);
     opacity: 1;
   }
   100% {
-    transform: translateX(48%) rotate(12deg);
-    opacity: 0.55;
+    transform: translate(56%, 10%) rotate(22deg) scale(0.92);
+    opacity: 0.4;
   }
 }
+
+/* Crumbs */
+
+.crumb-layer {
+  z-index: 1;
+  overflow: visible;
+}
+
+.crumb {
+  position: absolute;
+  left: 50%;
+  top: 48%;
+  width: 6px;
+  height: 5px;
+  border-radius: 40% 60% 55% 45%;
+  background: #c4a574;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.cookie-wrap.is-cracking .crumb {
+  animation: crumb-fly 0.95s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+@keyframes crumb-fly {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0.6) rotate(0deg);
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--dx), var(--dy)) scale(0.3) rotate(var(--rot));
+  }
+}
+
+/* Fortune slip */
 
 .fortune-slip {
   border-left: 1px solid rgba(42, 37, 32, 0.08);
   border-right: 1px solid rgba(42, 37, 32, 0.08);
   z-index: 2;
+  box-shadow:
+    0 18px 50px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 248, 230, 0.08);
 }
 
 .fortune-slip.is-visible {
@@ -110,15 +372,19 @@ textarea.field-line {
   width: 100% !important;
   opacity: 1;
   pointer-events: auto;
-  animation: slip-in 0.9s ease forwards;
+  animation: slip-rise 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-@keyframes slip-in {
+@keyframes slip-rise {
   0% {
     opacity: 0;
+    clip-path: inset(40% 0 40% 0);
+    filter: blur(2px);
   }
   100% {
     opacity: 1;
+    clip-path: inset(0 0 0 0);
+    filter: blur(0);
   }
 }
 
@@ -135,11 +401,40 @@ textarea.field-line {
   padding-top: 1.15rem;
 }
 
+.fortune-inner p {
+  animation: line-fade 0.7s ease both;
+}
+
+.fortune-slip.is-visible #fortune-block-1 {
+  animation-delay: 0.15s;
+}
+
+.fortune-slip.is-visible #fortune-block-2 {
+  animation-delay: 0.35s;
+}
+
+.fortune-slip.is-visible #fortune-block-3 {
+  animation-delay: 0.55s;
+}
+
+@keyframes line-fade {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Loader / buttons */
+
 .loader-ring {
   width: 36px;
   height: 36px;
   border: 1.5px solid rgba(196, 165, 116, 0.2);
-  border-top-color: #c4a574;
+  border-top-color: var(--sand);
   border-radius: 50%;
   animation: spin 0.9s linear infinite;
 }
@@ -150,20 +445,70 @@ textarea.field-line {
   }
 }
 
+.btn-gold {
+  position: relative;
+  overflow: hidden;
+  transition: background 0.25s ease, transform 0.2s ease, box-shadow 0.25s ease;
+  box-shadow: 0 10px 30px rgba(196, 165, 116, 0.18);
+}
+
+.btn-gold::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    110deg,
+    transparent 20%,
+    rgba(255, 255, 255, 0.28) 45%,
+    transparent 70%
+  );
+  transform: translateX(-120%);
+  transition: transform 0.7s ease;
+}
+
+.btn-gold:hover::after {
+  transform: translateX(120%);
+}
+
+.btn-gold:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 36px rgba(196, 165, 116, 0.28);
+}
+
 .btn-gold:active {
   transform: translateY(1px);
 }
 
+.btn-ghost {
+  transition: background 0.25s ease, border-color 0.25s ease, transform 0.2s ease;
+}
+
+.btn-ghost:hover {
+  transform: translateY(-1px);
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .orb,
+  .cookie-glow,
+  .cookie-wrap,
   .cookie-wrap:hover .cookie-svg,
+  .cookie-wrap.is-cracking .cookie-svg,
   .cookie-wrap.is-cracking #cookie-left,
   .cookie-wrap.is-cracking #cookie-right,
+  .cookie-wrap.is-cracking .crumb,
   .fortune-slip.is-visible,
-  .loader-ring {
+  .fortune-inner p,
+  .loader-ring,
+  .stage-panel,
+  .header-fade,
+  .btn-gold::after {
     animation: none !important;
+    transition: none !important;
   }
 
   .fortune-slip.is-visible {
     opacity: 1;
+    clip-path: none;
+    filter: none;
   }
 }

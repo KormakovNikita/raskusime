@@ -22,7 +22,7 @@
               parchment: '#f7f1e6',
             },
             fontFamily: {
-              sans: ['"Inter"', 'system-ui', 'sans-serif'],
+              sans: ['"Manrope"', 'system-ui', 'sans-serif'],
               serif: ['"Cormorant Garamond"', 'Georgia', 'serif'],
             },
           },
@@ -32,15 +32,24 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Manrope:wght@300;400;500;600&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="/styles.css" />
   </head>
-  <body class="bg-ink text-white font-sans antialiased min-h-screen">
-    <div class="relative min-h-screen flex flex-col">
-      <header class="w-full px-5 sm:px-8 py-5 flex items-center justify-between gap-4">
-        <a href="/" class="text-sm sm:text-base tracking-[0.35em] font-medium text-white/90 hover:text-sand transition-colors"
+  <body class="bg-ink text-white font-sans antialiased min-h-screen overflow-x-hidden">
+    <div class="atmosphere" aria-hidden="true">
+      <div class="orb orb-a"></div>
+      <div class="orb orb-b"></div>
+      <div class="orb orb-c"></div>
+      <div class="grain"></div>
+    </div>
+
+    <div class="relative z-10 min-h-screen flex flex-col">
+      <header class="w-full px-5 sm:px-8 py-5 flex items-center justify-between gap-4 header-fade">
+        <a
+          href="/"
+          class="logo-mark text-sm sm:text-base tracking-[0.35em] font-medium text-white/90 hover:text-sand transition-colors"
           >РАСКУСИ</a
         >
         <p class="text-[11px] sm:text-xs text-white/35 tracking-wide text-right">
@@ -49,79 +58,201 @@
       </header>
 
       <main class="flex-1 flex flex-col items-center justify-center px-5 sm:px-8 pb-16 pt-4">
-        <!-- Cookie stage -->
-        <div id="cookie-stage" class="relative z-0 w-full max-w-md flex items-center justify-center mb-10 sm:mb-12">
-          <div id="cookie-wrap" class="cookie-wrap relative w-48 h-32 sm:w-56 sm:h-36">
+        <div
+          id="cookie-stage"
+          class="relative z-0 w-full max-w-lg flex items-center justify-center mb-10 sm:mb-12"
+        >
+          <div class="cookie-glow" aria-hidden="true"></div>
+
+          <div id="cookie-wrap" class="cookie-wrap relative w-56 h-40 sm:w-72 sm:h-48">
+            <!-- Whole closed cookie -->
             <svg
               id="cookie-whole"
-              class="cookie-svg absolute inset-0 w-full h-full"
-              viewBox="0 0 220 140"
+              class="cookie-svg absolute inset-0 w-full h-full drop-shadow-cookie"
+              viewBox="0 0 280 180"
               xmlns="http://www.w3.org/2000/svg"
               aria-hidden="true"
             >
-              <ellipse cx="110" cy="72" rx="88" ry="42" fill="#c4a574" opacity="0.95" />
-              <ellipse cx="110" cy="68" rx="88" ry="42" fill="#d4bc8e" />
+              <defs>
+                <radialGradient id="cookieBody" cx="42%" cy="35%" r="65%">
+                  <stop offset="0%" stop-color="#e8d4a8" />
+                  <stop offset="45%" stop-color="#d4bc8e" />
+                  <stop offset="100%" stop-color="#a88955" />
+                </radialGradient>
+                <linearGradient id="cookieShade" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#fff6e0" stop-opacity="0.35" />
+                  <stop offset="55%" stop-color="#c4a574" stop-opacity="0" />
+                  <stop offset="100%" stop-color="#6e5633" stop-opacity="0.35" />
+                </linearGradient>
+                <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+                  <feGaussianBlur stdDeviation="0.6" />
+                </filter>
+              </defs>
+
+              <!-- soft ground shadow -->
+              <ellipse cx="140" cy="152" rx="78" ry="10" fill="#000" opacity="0.28" />
+
+              <!-- main body -->
               <path
-                d="M28 68 Q70 48 110 68 Q150 88 192 68"
+                d="M48 96
+                   C52 52 95 34 140 34
+                   C185 34 228 52 232 96
+                   C236 128 198 148 140 148
+                   C82 148 44 128 48 96 Z"
+                fill="url(#cookieBody)"
+              />
+              <path
+                d="M48 96
+                   C52 52 95 34 140 34
+                   C185 34 228 52 232 96
+                   C236 128 198 148 140 148
+                   C82 148 44 128 48 96 Z"
+                fill="url(#cookieShade)"
+              />
+
+              <!-- folded ridge -->
+              <path
+                d="M70 88 C100 62 140 78 140 94 C140 78 180 62 210 88"
                 fill="none"
-                stroke="#8a7350"
-                stroke-width="2.5"
+                stroke="#8a6f42"
+                stroke-width="3.2"
                 stroke-linecap="round"
                 opacity="0.55"
               />
-              <ellipse cx="72" cy="58" rx="4" ry="3" fill="#a88955" opacity="0.45" />
-              <ellipse cx="148" cy="78" rx="3.5" ry="2.5" fill="#a88955" opacity="0.4" />
-              <ellipse cx="118" cy="52" rx="3" ry="2.2" fill="#a88955" opacity="0.35" />
+              <path
+                d="M78 92 C105 70 140 84 140 98 C140 84 175 70 202 92"
+                fill="none"
+                stroke="#f0e0bc"
+                stroke-width="1.4"
+                stroke-linecap="round"
+                opacity="0.45"
+              />
+
+              <!-- seam notch -->
+              <path
+                d="M132 78 L140 98 L148 78"
+                fill="none"
+                stroke="#7a6238"
+                stroke-width="1.6"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                opacity="0.5"
+              />
+
+              <!-- baked speckles -->
+              <g fill="#8a7350" opacity="0.35">
+                <ellipse cx="92" cy="70" rx="3.2" ry="2.2" />
+                <ellipse cx="118" cy="58" rx="2.4" ry="1.8" />
+                <ellipse cx="168" cy="64" rx="2.8" ry="2" />
+                <ellipse cx="196" cy="78" rx="2.2" ry="1.6" />
+                <ellipse cx="108" cy="118" rx="2.6" ry="1.9" />
+                <ellipse cx="176" cy="122" rx="3" ry="2.1" />
+                <ellipse cx="148" cy="112" rx="2" ry="1.5" />
+              </g>
+
+              <!-- rim highlight -->
+              <path
+                d="M64 78 C90 48 140 42 140 42 C140 42 190 48 216 78"
+                fill="none"
+                stroke="#fff4d8"
+                stroke-width="2"
+                stroke-linecap="round"
+                opacity="0.28"
+                filter="url(#soft)"
+              />
             </svg>
 
+            <!-- Left half -->
             <svg
               id="cookie-left"
               class="cookie-half absolute inset-0 w-full h-full opacity-0 pointer-events-none"
-              viewBox="0 0 220 140"
+              viewBox="0 0 280 180"
               xmlns="http://www.w3.org/2000/svg"
               aria-hidden="true"
             >
+              <defs>
+                <linearGradient id="leftFill" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stop-color="#e2c994" />
+                  <stop offset="100%" stop-color="#b08d52" />
+                </linearGradient>
+              </defs>
               <path
-                d="M110 26 C62 26 22 44 22 68 C22 92 62 110 110 110 L110 26 Z"
-                fill="#d4bc8e"
+                d="M48 96
+                   C52 52 95 34 140 34
+                   L138 98
+                   L140 148
+                   C82 148 44 128 48 96 Z"
+                fill="url(#leftFill)"
               />
+              <!-- jagged break -->
               <path
-                d="M110 26 C62 26 22 44 22 68 C22 92 62 110 110 110"
+                d="M140 34 L132 58 L142 78 L130 98 L144 122 L138 148"
                 fill="none"
-                stroke="#8a7350"
-                stroke-width="1.5"
-                opacity="0.4"
+                stroke="#6e5530"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                opacity="0.7"
               />
-              <path d="M110 30 L105 68 L110 106" fill="#b8955f" opacity="0.55" />
+              <path
+                d="M140 34 L132 58 L142 78 L130 98 L144 122 L138 148 L140 148 L140 34 Z"
+                fill="#c9a86a"
+                opacity="0.55"
+              />
+              <ellipse cx="92" cy="70" rx="3" ry="2" fill="#8a7350" opacity="0.35" />
+              <ellipse cx="108" cy="118" rx="2.4" ry="1.8" fill="#8a7350" opacity="0.3" />
             </svg>
 
+            <!-- Right half -->
             <svg
               id="cookie-right"
               class="cookie-half absolute inset-0 w-full h-full opacity-0 pointer-events-none"
-              viewBox="0 0 220 140"
+              viewBox="0 0 280 180"
               xmlns="http://www.w3.org/2000/svg"
               aria-hidden="true"
             >
+              <defs>
+                <linearGradient id="rightFill" x1="1" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#d8bd88" />
+                  <stop offset="100%" stop-color="#9a7a45" />
+                </linearGradient>
+              </defs>
               <path
-                d="M110 26 C158 26 198 44 198 68 C198 92 158 110 110 110 L110 26 Z"
-                fill="#c4a574"
+                d="M140 34
+                   C185 34 228 52 232 96
+                   C236 128 198 148 140 148
+                   L142 98
+                   Z"
+                fill="url(#rightFill)"
               />
               <path
-                d="M110 26 C158 26 198 44 198 68 C198 92 158 110 110 110"
+                d="M140 34 L148 58 L138 78 L150 98 L136 122 L142 148"
                 fill="none"
-                stroke="#8a7350"
-                stroke-width="1.5"
-                opacity="0.35"
+                stroke="#6e5530"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                opacity="0.7"
               />
-              <path d="M110 30 L115 68 L110 106" fill="#a88955" opacity="0.45" />
+              <path
+                d="M140 34 L148 58 L138 78 L150 98 L136 122 L142 148 L140 148 L140 34 Z"
+                fill="#b8955f"
+                opacity="0.5"
+              />
+              <ellipse cx="196" cy="78" rx="2.4" ry="1.8" fill="#8a7350" opacity="0.35" />
+              <ellipse cx="176" cy="122" rx="2.8" ry="2" fill="#8a7350" opacity="0.3" />
             </svg>
+
+            <div id="crumb-layer" class="crumb-layer absolute inset-0 pointer-events-none" aria-hidden="true"></div>
 
             <article
               id="fortune-slip"
-              class="fortune-slip absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(88vw,280px)] bg-parchment text-ink px-5 py-7 sm:px-6 sm:py-8 opacity-0 pointer-events-none shadow-[0_12px_40px_rgba(0,0,0,0.45)] z-[2]"
+              class="fortune-slip absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(88vw,300px)] bg-parchment text-ink px-5 py-7 sm:px-7 sm:py-9 opacity-0 pointer-events-none z-[2]"
               aria-live="polite"
             >
-              <div class="fortune-inner font-serif text-[15px] sm:text-base leading-relaxed text-center space-y-5 text-[#2a2520]">
+              <div
+                class="fortune-inner font-serif text-[15px] sm:text-[17px] leading-relaxed text-center space-y-5 text-[#2a2520]"
+              >
                 <p id="fortune-block-1" class="whitespace-pre-line"></p>
                 <p id="fortune-block-2" class="whitespace-pre-line"></p>
                 <p id="fortune-block-3" class="whitespace-pre-line font-semibold"></p>
@@ -130,8 +261,7 @@
           </div>
         </div>
 
-        <!-- Stage 1: form -->
-        <section id="stage-form" class="relative z-20 w-full max-w-md space-y-8">
+        <section id="stage-form" class="relative z-20 w-full max-w-md space-y-8 stage-panel">
           <div class="space-y-6">
             <label class="block">
               <span class="sr-only">Ваше имя</span>
@@ -184,7 +314,7 @@
           <button
             id="btn-pay"
             type="button"
-            class="btn-gold relative z-20 w-full py-4 px-6 text-sm sm:text-[15px] font-medium tracking-wide text-ink bg-sand hover:bg-sand-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            class="btn-gold relative z-20 w-full py-4 px-6 text-sm sm:text-[15px] font-medium tracking-wide text-ink bg-sand hover:bg-sand-light disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Раскусить за 29 ₽ через T-Pay
           </button>
@@ -194,20 +324,18 @@
           </p>
         </section>
 
-        <!-- Stage 2: loader -->
-        <section id="stage-loader" class="hidden w-full max-w-sm flex-col items-center gap-6">
+        <section id="stage-loader" class="hidden w-full max-w-sm flex-col items-center gap-6 stage-panel">
           <div class="loader-ring" aria-hidden="true"></div>
           <p id="loader-text" class="text-sm text-white/45 tracking-wide text-center">
             Проверяем транзакцию...
           </p>
         </section>
 
-        <!-- Stage 3: after fortune -->
-        <section id="stage-again" class="hidden relative z-20 w-full max-w-sm mx-auto mt-8 sm:mt-10">
+        <section id="stage-again" class="hidden relative z-20 w-full max-w-sm mx-auto mt-8 sm:mt-10 stage-panel">
           <button
             id="btn-again"
             type="button"
-            class="w-full py-3.5 px-6 text-sm border border-sand/40 text-sand hover:bg-sand/10 transition-colors tracking-wide"
+            class="w-full py-3.5 px-6 text-sm border border-sand/40 text-sand hover:bg-sand/10 transition-colors tracking-wide btn-ghost"
           >
             Получить еще одно предсказание
           </button>
