@@ -281,15 +281,27 @@ app.post('/api/create-payment', async (req, res) => {
         body: JSON.stringify(initParams),
         signal: controller.signal,
       });
+    } catch (fetchErr) {
+      clearTimeout(timeout);
+      orders.delete(orderId);
+      console.error('Tinkoff fetch failed:', fetchErr);
+      return res.status(502).json({
+        success: false,
+        error: 'Не удалось связаться с платёжным шлюзом. Попробуйте позже.',
+        detail: fetchErr.message,
+      });
     } finally {
       clearTimeout(timeout);
     }
 
     if (!tinkoffResponse.ok) {
+      const bodyText = await tinkoffResponse.text().catch(() => '');
       orders.delete(orderId);
+      console.error('Tinkoff HTTP error:', tinkoffResponse.status, bodyText.slice(0, 500));
       return res.status(502).json({
         success: false,
         error: 'Не удалось связаться с платёжным шлюзом. Попробуйте позже.',
+        detail: `HTTP ${tinkoffResponse.status}`,
       });
     }
 
@@ -301,6 +313,7 @@ app.post('/api/create-payment', async (req, res) => {
       return res.status(502).json({
         success: false,
         error: data.Message || data.Details || 'Платёж не создан. Проверьте настройки терминала.',
+        detail: data.ErrorCode ? `ErrorCode ${data.ErrorCode}` : undefined,
       });
     }
 
@@ -321,6 +334,7 @@ app.post('/api/create-payment', async (req, res) => {
     return res.status(500).json({
       success: false,
       error: 'Внутренняя ошибка при создании платежа.',
+      detail: err.message,
     });
   }
 });
@@ -499,6 +513,10 @@ app.get('/api/health', (_req, res) => {
     demoMode: DEMO_MODE,
     openaiConfigured: AI_ENABLED,
     model: AI_ENABLED ? OPENAI_MODEL : null,
+    openaiBaseUrl: OPENAI_BASE_URL,
+    tinkoffKeyLength: TINKOFF_TERMINAL_KEY.length,
+    tinkoffPasswordLength: TINKOFF_SECRET_PASSWORD.length,
+    baseUrl: BASE_URL,
   });
 });
 
