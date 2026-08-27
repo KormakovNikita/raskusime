@@ -33,28 +33,25 @@ npm run dev
 | `BASE_URL` | Публичный URL приложения (для SuccessURL / NotificationURL) |
 | `TINKOFF_TERMINAL_KEY` | Ключ терминала Т-Банка |
 | `TINKOFF_SECRET_PASSWORD` | Пароль терминала для подписи Token |
-| `OPENAI_API_KEY` | Ключ LLM (OpenAI / DeepSeek / ProxyAPI и т.п.) |
-| `OPENAI_MODEL` | Модель Chat Completions |
+| `OPENAI_API_KEY` | Ключ LLM (ProxyAPI / OpenAI / другой совместимый) |
+| `OPENAI_MODEL` | Модель Chat Completions (`gpt-4o-mini` и т.п.) |
 | `OPENAI_BASE_URL` | Базовый URL API (совместимый с OpenAI Chat Completions) |
 | `DEMO_MODE` | `true` — симуляция оплаты без реального эквайринга |
 
 Если `OPENAI_API_KEY` не задан, сервер временно отдаёт локальный шаблон. После добавления ключа перезапустите сервер — предсказания пойдут через LLM.
 
-### LLM из РФ (DeepSeek)
+### LLM из РФ (ProxyAPI)
 
-Прямой OpenAI с российских VPS часто отвечает `403 unsupported_country_region_territory`. DeepSeek API обычно доступен без VPN и совместим с тем же кодом.
+Прямой OpenAI с российских VPS часто отвечает `403 unsupported_country_region_territory`. ProxyAPI даёт тот же API с оплатой в рублях.
 
-1. Зарегистрируйтесь на [platform.deepseek.com](https://platform.deepseek.com), создайте API key, пополните баланс.
+1. Зарегистрируйтесь на [proxyapi.ru](https://proxyapi.ru), пополните баланс, создайте API key.
 2. В `.env` на VPS:
    ```env
-   OPENAI_API_KEY=sk-...ключ_deepseek...
-   OPENAI_BASE_URL=https://api.deepseek.com/v1
-   OPENAI_MODEL=deepseek-chat
+   OPENAI_API_KEY=ваш_ключ_proxyapi
+   OPENAI_BASE_URL=https://api.proxyapi.ru/openai/v1
+   OPENAI_MODEL=gpt-4o-mini
    ```
-   Если `deepseek-chat` недоступен — попробуйте `deepseek-v4-flash`.
 3. `pm2 restart raskusi`
-
-Оплата DeepSeek из РФ бывает сложной (часто нужна иностранная карта / AliPay). Альтернатива с оплатой в рублях — ProxyAPI или похожий агрегатор.
 
 Если ключи Т-Банка не заданы (или оставлены плейсхолдеры), сервер автоматически работает в **демо-режиме**: платёж подтверждается на локальной странице без списания средств.
 
