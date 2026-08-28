@@ -218,7 +218,9 @@ function renderPublic(fileName) {
     .split('{{BASE_URL}}')
     .join(BASE_URL)
     .split('{{YANDEX_METRIKA_SCRIPT}}')
-    .join(buildMetrikaScript());
+    .join(buildMetrikaScript())
+    .split('{{YANDEX_METRIKA_ID}}')
+    .join(YANDEX_METRIKA_ID || '');
 }
 
 function sendPublicHtml(res, fileName, status = 200) {

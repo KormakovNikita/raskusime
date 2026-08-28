@@ -107,7 +107,10 @@ PaymentId также виден в кабинете Т-Банка.
 3. Пропишите публичный `BASE_URL` (HTTPS), доступный для вебхуков Т-Банка.
 4. В личном кабинете терминала: Notification URL → `{BASE_URL}/api/payment-webhook`.
 5. Проверьте `/api/health`: `"tinkoffMode":"live"`, `"demoMode":false`.
-6. Опционально: `YANDEX_METRIKA_ID=12345678` для целей «pay_click» и «fortune_received».
+6. `YANDEX_METRIKA_ID=112027032` — цели в Метрике (тип «JavaScript-событие»):
+   - `pay_click` — клик по кнопке оплаты (после email и согласия на ПДн)
+   - `pay_redirect` — платёж создан, переход на T-Pay
+   - `fortune_received` — предсказание показано после оплаты
 7. SSL на VPS: `sudo bash scripts/fix-vps-ca.sh`, затем `INSECURE_TLS=false`.
 
 Заказы и платежи сохраняются в `data/store.json` (переживают перезапуск PM2).

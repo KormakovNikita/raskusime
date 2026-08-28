@@ -328,9 +328,19 @@
 
   let metrikaId = null;
 
+  function resolveMetrikaId() {
+    if (metrikaId) return metrikaId;
+    const fromMeta = document.querySelector('meta[name="yandex-metrika-id"]')?.content?.trim();
+    if (fromMeta && /^\d+$/.test(fromMeta)) {
+      metrikaId = fromMeta;
+    }
+    return metrikaId;
+  }
+
   function trackGoal(goal) {
-    if (metrikaId && typeof window.ym === 'function') {
-      window.ym(metrikaId, 'reachGoal', goal);
+    const id = resolveMetrikaId();
+    if (id && typeof window.ym === 'function') {
+      window.ym(id, 'reachGoal', goal);
     }
   }
 
@@ -348,6 +358,8 @@
       inputConsentPd?.focus();
       return;
     }
+
+    trackGoal('pay_click');
 
     const generation = ++flowGeneration;
     btnPay.disabled = true;
@@ -378,7 +390,7 @@
 
       activeOrderId = data.orderId;
       sessionStorage.setItem('raskusi_orderId', data.orderId);
-      trackGoal('pay_click');
+      trackGoal('pay_redirect');
 
       loaderText.textContent = 'Проверяем транзакцию...';
       window.location.href = data.PaymentURL;
@@ -542,6 +554,8 @@
       }
       if (health.metrikaEnabled && health.metrikaId) {
         metrikaId = health.metrikaId;
+      } else {
+        resolveMetrikaId();
       }
     } catch {
       /* ignore */
