@@ -30,7 +30,7 @@ const TINKOFF_TAXATION = process.env.TINKOFF_TAXATION || 'usn_income';
 const RECEIPT_TAX = process.env.RECEIPT_TAX || 'none';
 const RECEIPT_ITEM_NAME = process.env.RECEIPT_ITEM_NAME || 'Предсказание Раскуси';
 const REFUND_ADMIN_KEY = process.env.REFUND_ADMIN_KEY || '';
-const YANDEX_METRIKA_ID = (process.env.YANDEX_METRIKA_ID || '').trim();
+const YANDEX_METRIKA_ID = (process.env.YANDEX_METRIKA_ID || '112027032').trim();
 const PAYMENT_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
 const FULFILLED_RETENTION_MS = 72 * 60 * 60 * 1000;
 const PENDING_RETENTION_MS = 60 * 60 * 1000;
@@ -170,15 +170,20 @@ function markOrderFulfilled(order) {
 
 function buildMetrikaScript() {
   if (!YANDEX_METRIKA_ID || !/^\d+$/.test(YANDEX_METRIKA_ID)) return '';
-  return `<script type="text/javascript">
-   (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
-   m[i].l=1*new Date();
-   for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
-   k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})
-   (window, document, "script", "https://mc.yandex.ru/metrika/tag.js", "ym");
-   ym(${YANDEX_METRIKA_ID}, "init", { clickmap:true, trackLinks:true, accurateTrackBounce:true, webvisor:true });
+  const id = YANDEX_METRIKA_ID;
+  return `<!-- Yandex.Metrika counter -->
+<script type="text/javascript">
+    (function(m,e,t,r,i,k,a){
+        m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+        m[i].l=1*new Date();
+        for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+        k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
+    })(window, document,'script','https://mc.yandex.ru/metrika/tag.js?id=${id}', 'ym');
+
+    ym(${id}, 'init', {ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:true});
 </script>
-<noscript><div><img src="https://mc.yandex.ru/watch/${YANDEX_METRIKA_ID}" style="position:absolute; left:-9999px;" alt="" /></div></noscript>`;
+<noscript><div><img src="https://mc.yandex.ru/watch/${id}" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+<!-- /Yandex.Metrika counter -->`;
 }
 
 const SYSTEM_PROMPT = `Ты пишешь записки из китайского печенья: короткие предсказания-ориентиры.
