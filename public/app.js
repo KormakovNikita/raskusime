@@ -230,11 +230,14 @@
         inputRetryQuestion.value = '';
         clearRetryError();
         stageRetry.classList.remove('hidden');
+        trackGoal('fortune_refusal');
       } else {
         retryOrderId = null;
         sessionStorage.removeItem('raskusi_retryOrderId');
         stageAgain.classList.remove('hidden');
       }
+
+      trackGoalOnce('fortune_shown');
     });
   }
 
@@ -327,6 +330,8 @@
   }
 
   let metrikaId = null;
+  const trackedOnce = new Set();
+  const ORDER_PRICE_RUB = 29;
 
   function resolveMetrikaId() {
     if (metrikaId) return metrikaId;
@@ -337,11 +342,160 @@
     return metrikaId;
   }
 
-  function trackGoal(goal) {
+  function trackGoal(goal, params) {
     const id = resolveMetrikaId();
-    if (id && typeof window.ym === 'function') {
-      window.ym(id, 'reachGoal', goal);
+    if (!id || typeof window.ym !== 'function') return;
+    if (params && Object.keys(params).length > 0) {
+      window.ym(id, 'reachGoal', goal, params);
+      return;
     }
+    window.ym(id, 'reachGoal', goal);
+  }
+
+  function trackGoalOnce(goal, params) {
+    if (trackedOnce.has(goal)) return;
+    trackedOnce.add(goal);
+    trackGoal(goal, params);
+  }
+
+  function pushEcommerce(action, payload) {
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({ ecommerce: { [action]: payload } });
+  }
+
+  function trackPurchase(orderId) {
+    pushEcommerce('purchase', {
+      actionField: {
+        id: orderId,
+        revenue: ORDER_PRICE_RUB,
+      },
+      products: [
+        {
+          id: 'raskusi_fortune',
+          name: 'Предсказание Раскуси',
+          price: ORDER_PRICE_RUB,
+          quantity: 1,
+        },
+      ],
+    });
+    trackGoal('pay_success', { order_price: ORDER_PRICE_RUB, currency: 'RUB' });
+    trackGoal('fortune_received', { order_price: ORDER_PRICE_RUB, currency: 'RUB' });
+  }
+
+  function trackCheckoutStep(step, orderId) {
+    pushEcommerce('checkout', {
+      actionField: { step },
+      products: [
+        {
+          id: 'raskusi_fortune',
+          name: 'Предсказание Раскуси',
+          price: ORDER_PRICE_RUB,
+          quantity: 1,
+        },
+      ],
+    });
+    if (orderId) {
+      trackGoal('pay_checkout', { step, order_id: orderId });
+    }
+  }
+
+  function setupScrollGoals() {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    const onScroll = () => {
+      const doc = document.documentElement;
+      const max = doc.scrollHeight - window.innerHeight;
+      if (max <= 0) return;
+      const ratio = window.scrollY / max;
+      if (ratio >= 0.5) trackGoalOnce('scroll_50');
+      if (ratio >= 0.9) trackGoalOnce('scroll_bottom');
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+
+    const observeSection = (selector, goal) => {
+      const el = document.querySelector(selector);
+      if (!el || typeof IntersectionObserver !== 'function') return;
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              trackGoalOnce(goal);
+              observer.disconnect();
+            }
+          });
+        },
+        { threshold: 0.35 }
+      );
+      observer.observe(el);
+    };
+
+    observeSection('#examples', 'view_examples');
+    observeSection('#how', 'view_how');
+    observeSection('#about', 'view_about');
+    observeSection('#faq', 'view_faq');
+    observeSection('#stage-form', 'view_form');
+  }
+
+  function setupFormGoals() {
+    const markFormStart = () => trackGoalOnce('form_start');
+
+    inputName?.addEventListener('focus', markFormStart);
+    inputQuestion?.addEventListener('focus', markFormStart);
+    inputEmail?.addEventListener('focus', markFormStart);
+
+    inputName?.addEventListener('blur', () => {
+      if (inputName.value.trim()) trackGoalOnce('form_name_filled');
+    });
+
+    inputQuestion?.addEventListener('blur', () => {
+      if (inputQuestion.value.trim()) trackGoalOnce('form_question_filled');
+    });
+
+    inputEmail?.addEventListener('blur', () => {
+      const email = (inputEmail.value || '').trim();
+      if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        trackGoalOnce('form_email_valid');
+      }
+    });
+
+    inputConsentPd?.addEventListener('change', () => {
+      if (inputConsentPd.checked) trackGoalOnce('consent_checked');
+    });
+  }
+
+  function setupEngagementGoals() {
+    document.querySelectorAll('.gender-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        trackGoalOnce('form_gender_selected', { gender: btn.dataset.gender || 'unknown' });
+      });
+    });
+
+    document.querySelectorAll('.faq-item').forEach((item, index) => {
+      item.addEventListener('toggle', () => {
+        if (!item.open) return;
+        trackGoal('faq_open', { faq_index: index + 1 });
+      });
+    });
+
+    const footerGoals = [
+      ['a[href="/offer.html"]', 'footer_offer_click'],
+      ['a[href="/privacy.html"]', 'footer_privacy_click'],
+      ['a[href="/consent-pd.html"]', 'footer_consent_click'],
+      ['a[href^="mailto:support@raskusime.ru"]', 'footer_support_click'],
+      ['a[href="/#faq"]', 'footer_faq_click'],
+    ];
+    footerGoals.forEach(([selector, goal]) => {
+      document.querySelectorAll(selector).forEach((link) => {
+        link.addEventListener('click', () => trackGoal(goal));
+      });
+    });
+  }
+
+  function setupAnalytics() {
+    setupScrollGoals();
+    setupFormGoals();
+    setupEngagementGoals();
   }
 
   async function startPayment() {
@@ -360,11 +514,14 @@
     }
 
     trackGoal('pay_click');
+    trackGoalOnce('checkout_start');
 
     const generation = ++flowGeneration;
     btnPay.disabled = true;
     loaderText.textContent = 'Создаём платёж...';
     setStage('loader');
+    trackGoal('pay_create_start');
+    trackCheckoutStep(1);
 
     const payload = {
       name: inputName.value.trim(),
@@ -390,12 +547,14 @@
 
       activeOrderId = data.orderId;
       sessionStorage.setItem('raskusi_orderId', data.orderId);
-      trackGoal('pay_redirect');
+      trackCheckoutStep(2, data.orderId);
+      trackGoal('pay_redirect', { order_price: ORDER_PRICE_RUB, currency: 'RUB' });
 
       loaderText.textContent = 'Проверяем транзакцию...';
       window.location.href = data.PaymentURL;
     } catch (err) {
       if (generation !== flowGeneration) return;
+      trackGoal('pay_create_error');
       setStage('form');
       showError(err.message || 'Ошибка сети. Попробуйте позже.');
       btnPay.disabled = false;
@@ -407,6 +566,8 @@
     activeOrderId = orderId;
     sessionStorage.removeItem('raskusi_orderId');
     loaderText.textContent = 'Готовим предсказание...';
+    trackGoalOnce('pay_return');
+    trackGoalOnce('pay_poll_start');
 
     try {
       const data = await pollUntilPaid(orderId, generation);
@@ -415,9 +576,10 @@
         canRetry: Boolean(data.canRetry),
         orderId: data.orderId || orderId,
       });
-      trackGoal('fortune_received');
+      trackPurchase(data.orderId || orderId);
     } catch (err) {
       if (generation !== flowGeneration) return;
+      trackGoal('pay_poll_error');
       clearPaymentParams();
       setStage('form');
       btnPay.disabled = false;
@@ -448,6 +610,7 @@
     btnRetry.disabled = true;
     loaderText.textContent = 'Готовим предсказание...';
     setStage('loader');
+    trackGoal('retry_click');
 
     try {
       const res = await fetch('/api/retry-fortune', {
@@ -477,6 +640,7 @@
         canRetry: Boolean(data.canRetry),
         orderId: data.orderId || orderId,
       });
+      trackGoal('retry_success');
     } catch (err) {
       if (generation !== flowGeneration) return;
       stageRetry.classList.remove('hidden');
@@ -517,6 +681,7 @@
 
   btnAgain.addEventListener('click', (event) => {
     event.preventDefault();
+    trackGoal('order_again_click');
     resetToForm();
   });
 
@@ -558,8 +723,11 @@
         resolveMetrikaId();
       }
     } catch {
-      /* ignore */
+      resolveMetrikaId();
     }
+
+    setupAnalytics();
+    trackGoalOnce('landing');
 
     const params = new URLSearchParams(window.location.search);
     const orderId = params.get('orderId');
@@ -568,6 +736,7 @@
 
     if (status === 'fail') {
       sessionStorage.removeItem('raskusi_orderId');
+      trackGoal('pay_fail');
       showError('Оплата не завершена. Вы можете попробовать снова.');
       clearPaymentParams();
       return;
