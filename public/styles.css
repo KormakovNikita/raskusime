@@ -664,6 +664,46 @@ textarea.field-line {
   color: rgba(212, 196, 168, 0.9);
 }
 
+/* --- Yandex RSYA ad slots --- */
+
+.rsya-wrap {
+  max-width: 40rem;
+  margin: 0 auto;
+  padding: 0 1.25rem;
+}
+
+.rsya-wrap.hidden {
+  display: none !important;
+}
+
+body.is-funnel-active .rsya-wrap {
+  display: none !important;
+}
+
+.rsya-label {
+  margin: 0 0 0.5rem;
+  text-align: center;
+  font-size: 0.58rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.22);
+}
+
+.rsya-slot {
+  min-height: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 0.35rem;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.rsya-slot:empty {
+  min-height: 0;
+  background: transparent;
+}
+
 /* --- Hero / SEO / legal --- */
 
 .hero-brand {

@@ -147,6 +147,31 @@ PaymentId также виден в кабинете Т-Банка.
 **E-commerce:** при `pay_success` в `dataLayer` уходит событие `purchase` (29 ₽). В Метрике включите **Электронная коммерция** → источник данных **dataLayer**.
 
 **Яндекс.Директ:** в качестве цели оптимизации рекомендуется `pay_success` (или ecommerce «Покупка»). Для обучения на верх воронки — `pay_redirect` или `form_email_valid`.
+
+## Монетизация: РСЯ (реклама на сайте)
+
+Чтобы **показывать** рекламу Яндекса на raskusime.ru и получать доход (не путать с **покупкой** трафика в Директе):
+
+1. Зарегистрируйтесь в [partner.yandex.ru](https://partner.yandex.ru/) → **Рекламная сеть Яндекса**.
+2. **Добавить сайт** → `https://raskusime.ru` → дождитесь модерации (обычно 1–3 раб. дня).
+3. **Создать блоки** (рекомендуемые форматы):
+   - **Адаптивный блок** — между SEO-секциями (`YANDEX_RSYA_BLOCK_CONTENT`)
+   - **Горизонтальный / адаптивный** — перед футером (`YANDEX_RSYA_BLOCK_FOOTER`)
+4. Скопируйте **ID блока** вида `R-A-1234567-1` из кода блока в кабинете.
+5. В `.env` на VPS:
+
+```env
+YANDEX_RSYA_BLOCK_CONTENT=R-A-XXXXXXX-1
+YANDEX_RSYA_BLOCK_FOOTER=R-A-XXXXXXX-2
+YANDEX_RSYA_ADS_TXT=yandex.com, ВАШ_ID, DIRECT, f08c47fec0942fa0
+```
+
+Строка `YANDEX_RSYA_ADS_TXT` — одна строка из кабинета Partner → сайт → **ads.txt**. Проверка: `https://raskusime.ru/ads.txt`
+
+6. `pm2 restart raskusi` → `/api/health` → `"rsyaEnabled": true`.
+
+**Важно:** реклама **не показывается** во время оплаты и показа записки (только на главной в SEO-зоне). Блоки не создавайте рядом с кнопкой «Оплатить» — это нарушает правила РСЯ.
+
 7. SSL на VPS: `sudo bash scripts/fix-vps-ca.sh`, затем `INSECURE_TLS=false`.
 
 Заказы и платежи сохраняются в `data/store.json` (переживают перезапуск PM2).

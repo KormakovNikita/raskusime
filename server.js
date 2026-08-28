@@ -31,6 +31,9 @@ const RECEIPT_TAX = process.env.RECEIPT_TAX || 'none';
 const RECEIPT_ITEM_NAME = process.env.RECEIPT_ITEM_NAME || 'Предсказание Раскуси';
 const REFUND_ADMIN_KEY = process.env.REFUND_ADMIN_KEY || '';
 const YANDEX_METRIKA_ID = (process.env.YANDEX_METRIKA_ID || '112027032').trim();
+const YANDEX_RSYA_BLOCK_CONTENT = (process.env.YANDEX_RSYA_BLOCK_CONTENT || '').trim();
+const YANDEX_RSYA_BLOCK_FOOTER = (process.env.YANDEX_RSYA_BLOCK_FOOTER || '').trim();
+const YANDEX_RSYA_ADS_TXT = (process.env.YANDEX_RSYA_ADS_TXT || '').trim();
 const PAYMENT_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
 const FULFILLED_RETENTION_MS = 72 * 60 * 60 * 1000;
 const PENDING_RETENTION_MS = 60 * 60 * 1000;
@@ -186,6 +189,40 @@ function buildMetrikaScript() {
 <!-- /Yandex.Metrika counter -->`;
 }
 
+function isValidRsyaBlockId(blockId) {
+  return /^R-A-\d+-\d+$/.test(blockId);
+}
+
+function getRsyaBlockIds() {
+  return [YANDEX_RSYA_BLOCK_CONTENT, YANDEX_RSYA_BLOCK_FOOTER].filter(isValidRsyaBlockId);
+}
+
+function buildRsyaLoader() {
+  if (getRsyaBlockIds().length === 0) return '';
+  return `<!-- Yandex.RTB loader -->
+<script>window.yaContextCb=window.yaContextCb||[]</script>
+<script src="https://yandex.ru/ads/system/context.js" async></script>`;
+}
+
+function buildRsyaBlock(blockId) {
+  if (!isValidRsyaBlockId(blockId)) return '';
+  const renderTo = `yandex_rtb_${blockId}`;
+  return `<!-- Yandex.RTB ${blockId} -->
+<aside class="rsya-wrap" aria-label="Реклама">
+  <p class="rsya-label">Реклама</p>
+  <div id="${renderTo}" class="rsya-slot" data-rsya-block="${blockId}"></div>
+</aside>
+<script>
+window.yaContextCb=window.yaContextCb||[];
+window.yaContextCb.push(function(){
+  Ya.Context.AdvManager.render({
+    blockId: "${blockId}",
+    renderTo: "${renderTo}"
+  });
+});
+</script>`;
+}
+
 const SYSTEM_PROMPT = `Ты пишешь записки из китайского печенья: короткие предсказания-ориентиры.
 
 СТИЛЬ
@@ -220,7 +257,13 @@ function renderPublic(fileName) {
     .split('{{YANDEX_METRIKA_SCRIPT}}')
     .join(buildMetrikaScript())
     .split('{{YANDEX_METRIKA_ID}}')
-    .join(YANDEX_METRIKA_ID || '');
+    .join(YANDEX_METRIKA_ID || '')
+    .split('{{YANDEX_RSYA_LOADER}}')
+    .join(buildRsyaLoader())
+    .split('{{YANDEX_RSYA_BLOCK_CONTENT}}')
+    .join(buildRsyaBlock(YANDEX_RSYA_BLOCK_CONTENT))
+    .split('{{YANDEX_RSYA_BLOCK_FOOTER}}')
+    .join(buildRsyaBlock(YANDEX_RSYA_BLOCK_FOOTER));
 }
 
 function sendPublicHtml(res, fileName, status = 200) {
@@ -229,6 +272,18 @@ function sendPublicHtml(res, fileName, status = 200) {
 
 app.get('/robots.txt', (_req, res) => {
   res.type('text/plain').send(renderPublic('robots.txt'));
+});
+
+app.get('/ads.txt', (_req, res) => {
+  if (YANDEX_RSYA_ADS_TXT) {
+    res.type('text/plain').send(`${YANDEX_RSYA_ADS_TXT.trim()}\n`);
+    return;
+  }
+  res
+    .type('text/plain')
+    .send(
+      '# Добавьте строку из partner.yandex.ru → Сайты → ads.txt\n# Пример: yandex.com, 123456, DIRECT, f08c47fec0942fa0\n'
+    );
 });
 
 app.get('/sitemap.xml', (_req, res) => {
@@ -883,6 +938,12 @@ app.get('/api/health', (_req, res) => {
     refundApiEnabled: !isPlaceholder(REFUND_ADMIN_KEY),
     metrikaEnabled: Boolean(YANDEX_METRIKA_ID),
     metrikaId: YANDEX_METRIKA_ID || null,
+    rsyaEnabled: getRsyaBlockIds().length > 0,
+    rsyaBlocks: {
+      content: isValidRsyaBlockId(YANDEX_RSYA_BLOCK_CONTENT) ? YANDEX_RSYA_BLOCK_CONTENT : null,
+      footer: isValidRsyaBlockId(YANDEX_RSYA_BLOCK_FOOTER) ? YANDEX_RSYA_BLOCK_FOOTER : null,
+    },
+    adsTxtConfigured: Boolean(YANDEX_RSYA_ADS_TXT),
     persistence: 'json-file',
   });
 });
@@ -932,4 +993,5 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`INSECURE_TLS=${INSECURE_TLS}`);
   console.log(`REFUND_API=${!isPlaceholder(REFUND_ADMIN_KEY)}`);
   console.log(`METRIKA=${YANDEX_METRIKA_ID ? 'on' : 'off'}`);
+  console.log(`RSYA=${getRsyaBlockIds().length ? getRsyaBlockIds().join(',') : 'off'}`);
 });

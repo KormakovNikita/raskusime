@@ -107,6 +107,11 @@
     stageAgain.classList.toggle('hidden', stage !== 'fortune');
     stageRetry.classList.toggle('hidden', stage !== 'retry');
 
+    document.body.classList.toggle('is-funnel-active', stage !== 'form');
+    document.querySelectorAll('.rsya-wrap').forEach((el) => {
+      el.classList.toggle('hidden', stage !== 'form');
+    });
+
     if (stage === 'form') {
       clearCrackTimers();
       cookieWrap.classList.remove('is-cracking', 'is-revealed', 'is-impact');
