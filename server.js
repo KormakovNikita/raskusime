@@ -32,7 +32,7 @@ const RECEIPT_ITEM_NAME = process.env.RECEIPT_ITEM_NAME || 'Предсказан
 const REFUND_ADMIN_KEY = process.env.REFUND_ADMIN_KEY || '';
 const YANDEX_METRIKA_ID = (process.env.YANDEX_METRIKA_ID || '112027032').trim();
 const YANDEX_RSYA_BLOCK_CONTENT = (process.env.YANDEX_RSYA_BLOCK_CONTENT || '').trim();
-const YANDEX_RSYA_BLOCK_FOOTER = (process.env.YANDEX_RSYA_BLOCK_FOOTER || '').trim();
+const YANDEX_RSYA_BLOCK_FOOTER = (process.env.YANDEX_RSYA_BLOCK_FOOTER || 'R-A-19829197-1').trim();
 const YANDEX_RSYA_ADS_TXT = (process.env.YANDEX_RSYA_ADS_TXT || '').trim();
 const PAYMENT_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
 const FULFILLED_RETENTION_MS = 72 * 60 * 60 * 1000;
@@ -199,7 +199,7 @@ function getRsyaBlockIds() {
 
 function buildRsyaLoader() {
   if (getRsyaBlockIds().length === 0) return '';
-  return `<!-- Yandex.RTB loader -->
+  return `<!-- Yandex.RTB -->
 <script>window.yaContextCb=window.yaContextCb||[]</script>
 <script src="https://yandex.ru/ads/system/context.js" async></script>`;
 }
@@ -213,11 +213,10 @@ function buildRsyaBlock(blockId) {
   <div id="${renderTo}" class="rsya-slot" data-rsya-block="${blockId}"></div>
 </aside>
 <script>
-window.yaContextCb=window.yaContextCb||[];
 window.yaContextCb.push(function(){
   Ya.Context.AdvManager.render({
-    blockId: "${blockId}",
-    renderTo: "${renderTo}"
+    "blockId": "${blockId}",
+    "renderTo": "${renderTo}"
   });
 });
 </script>`;
