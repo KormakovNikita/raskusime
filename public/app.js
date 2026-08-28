@@ -8,7 +8,6 @@
   const loaderText = $('loader-text');
   const formError = $('form-error');
   const retryError = $('retry-error');
-  const demoHint = $('demo-hint');
   const cookieStage = $('cookie-stage');
   const cookieWrap = $('cookie-wrap');
   const fortuneSlip = $('fortune-slip');
@@ -16,14 +15,12 @@
   const btnAgain = $('btn-again');
   const btnRetry = $('btn-retry');
   const inputName = $('input-name');
-  const inputEmail = $('input-email');
   const inputConsentPd = $('input-consent-pd');
   const inputQuestion = $('input-question');
   const inputRetryQuestion = $('input-retry-question');
   const atmosphere = document.querySelector('.atmosphere');
 
   let selectedGender = '';
-  let pollTimer = null;
   let activeOrderId = null;
   let retryOrderId = null;
   let flowGeneration = 0;
@@ -37,7 +34,6 @@
     });
   });
 
-  // Soft parallax for atmosphere
   if (atmosphere && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     window.addEventListener(
       'pointermove',
@@ -69,10 +65,6 @@
   function clearRetryError() {
     retryError.textContent = '';
     retryError.classList.add('hidden');
-  }
-
-  function clearPaymentParams() {
-    history.replaceState({}, '', '/');
   }
 
   function clearCrackTimers() {
@@ -176,13 +168,8 @@
     if (layer) layer.innerHTML = '';
   }
 
-  /**
-   * Crack first (cookie stays fixed size, slip stays hidden),
-   * then reveal slip between halves, then expand layout.
-   */
   function playCrackAndShow(fortuneText, { canRetry = false, orderId = null } = {}) {
     clearCrackTimers();
-    clearPaymentParams();
 
     const refusal = canRetry || isRefusalText(fortuneText);
     const [b1, b2, b3] = refusal
@@ -193,7 +180,6 @@
     $('fortune-block-2').textContent = b2;
     $('fortune-block-3').textContent = b3;
 
-    // Keep cookie theater visible; hide pay form / loader
     stageForm.classList.add('hidden');
     stageLoader.classList.add('hidden');
     stageLoader.classList.remove('flex');
@@ -207,14 +193,11 @@
     spawnCrumbs();
     cookieWrap.classList.add('is-cracking', 'is-impact');
 
-    // 1) Let halves split (~1.2s)
     later(1180, () => {
-      // 2) Reveal slip still absolutely centered between halves
       fortuneSlip.classList.remove('opacity-0');
       fortuneSlip.classList.add('is-visible', 'is-centered-reveal');
     });
 
-    // 3) Settle into document flow + actions
     later(1750, () => {
       cookieWrap.classList.add('is-revealed');
       cookieStage.classList.add('is-fortune');
@@ -246,97 +229,8 @@
     });
   }
 
-  function stopPolling() {
-    if (pollTimer) {
-      clearInterval(pollTimer);
-      pollTimer = null;
-    }
-  }
-
-  async function fetchFortune(orderId) {
-    const res = await fetch(`/api/get-fortune?orderId=${encodeURIComponent(orderId)}`, {
-      headers: { Accept: 'application/json' },
-    });
-    const data = await res.json().catch(() => ({}));
-    return { res, data };
-  }
-
-  function pollUntilPaid(orderId, generation, { maxAttempts = 40, intervalMs = 1500 } = {}) {
-    if (!loaderText.textContent || /транзакц/i.test(loaderText.textContent)) {
-      loaderText.textContent = 'Проверяем транзакцию...';
-    }
-    setStage('loader');
-
-    let attempts = 0;
-    let inFlight = false;
-
-    return new Promise((resolve, reject) => {
-      let settled = false;
-
-      const finish = (fn, value) => {
-        if (settled) return;
-        settled = true;
-        stopPolling();
-        fn(value);
-      };
-
-      const tick = async () => {
-        if (settled || generation !== flowGeneration || inFlight) return;
-        attempts += 1;
-        inFlight = true;
-
-        try {
-          const { res, data } = await fetchFortune(orderId);
-
-          if (settled || generation !== flowGeneration) return;
-
-          if (res.ok && data.success && data.fortune) {
-            finish(resolve, data);
-            return;
-          }
-
-          if (res.status === 403) {
-            loaderText.textContent = 'Проверяем транзакцию...';
-          } else if (res.ok || res.status === 202) {
-            loaderText.textContent = 'Готовим предсказание...';
-          }
-
-          if (res.status === 404) {
-            finish(reject, new Error(data.error || 'Заказ не найден или уже использован.'));
-            return;
-          }
-
-          if (res.status !== 403 && !res.ok) {
-            finish(reject, new Error(data.error || 'Ошибка при получении предсказания.'));
-            return;
-          }
-
-          if (attempts >= maxAttempts) {
-            finish(
-              reject,
-              new Error(
-                'Оплата не подтверждена вовремя. Если средства списались, напишите в поддержку.'
-              )
-            );
-          }
-        } catch {
-          if (settled || generation !== flowGeneration) return;
-          if (attempts >= maxAttempts) {
-            finish(reject, new Error('Сеть недоступна. Проверьте соединение и попробуйте снова.'));
-          }
-        } finally {
-          inFlight = false;
-        }
-      };
-
-      tick();
-      pollTimer = setInterval(tick, intervalMs);
-    });
-  }
-
   let metrikaId = null;
   const trackedOnce = new Set();
-  const ORDER_PRICE_RUB = 29;
 
   function resolveMetrikaId() {
     if (metrikaId) return metrikaId;
@@ -361,47 +255,6 @@
     if (trackedOnce.has(goal)) return;
     trackedOnce.add(goal);
     trackGoal(goal, params);
-  }
-
-  function pushEcommerce(action, payload) {
-    window.dataLayer = window.dataLayer || [];
-    window.dataLayer.push({ ecommerce: { [action]: payload } });
-  }
-
-  function trackPurchase(orderId) {
-    pushEcommerce('purchase', {
-      actionField: {
-        id: orderId,
-        revenue: ORDER_PRICE_RUB,
-      },
-      products: [
-        {
-          id: 'raskusi_fortune',
-          name: 'Предсказание Раскуси',
-          price: ORDER_PRICE_RUB,
-          quantity: 1,
-        },
-      ],
-    });
-    trackGoal('pay_success', { order_price: ORDER_PRICE_RUB, currency: 'RUB' });
-    trackGoal('fortune_received', { order_price: ORDER_PRICE_RUB, currency: 'RUB' });
-  }
-
-  function trackCheckoutStep(step, orderId) {
-    pushEcommerce('checkout', {
-      actionField: { step },
-      products: [
-        {
-          id: 'raskusi_fortune',
-          name: 'Предсказание Раскуси',
-          price: ORDER_PRICE_RUB,
-          quantity: 1,
-        },
-      ],
-    });
-    if (orderId) {
-      trackGoal('pay_checkout', { step, order_id: orderId });
-    }
   }
 
   function setupScrollGoals() {
@@ -447,7 +300,6 @@
 
     inputName?.addEventListener('focus', markFormStart);
     inputQuestion?.addEventListener('focus', markFormStart);
-    inputEmail?.addEventListener('focus', markFormStart);
 
     inputName?.addEventListener('blur', () => {
       if (inputName.value.trim()) trackGoalOnce('form_name_filled');
@@ -455,13 +307,6 @@
 
     inputQuestion?.addEventListener('blur', () => {
       if (inputQuestion.value.trim()) trackGoalOnce('form_question_filled');
-    });
-
-    inputEmail?.addEventListener('blur', () => {
-      const email = (inputEmail.value || '').trim();
-      if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        trackGoalOnce('form_email_valid');
-      }
     });
 
     inputConsentPd?.addEventListener('change', () => {
@@ -503,97 +348,54 @@
     setupEngagementGoals();
   }
 
-  async function startPayment() {
+  async function requestFortune() {
     clearError();
-    const email = (inputEmail?.value || '').trim();
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      showError('Укажите email — на него отправим чек об оплате.');
-      inputEmail?.focus();
-      return;
-    }
 
     if (!inputConsentPd?.checked) {
-      showError('Для оплаты необходимо согласие на обработку персональных данных.');
+      showError('Для персонализации необходимо согласие на обработку персональных данных.');
       inputConsentPd?.focus();
       return;
     }
 
-    trackGoal('pay_click');
-    trackGoalOnce('checkout_start');
+    trackGoal('fortune_request');
 
     const generation = ++flowGeneration;
     btnPay.disabled = true;
-    loaderText.textContent = 'Создаём платёж...';
+    loaderText.textContent = 'Готовим предсказание...';
     setStage('loader');
-    trackGoal('pay_create_start');
-    trackCheckoutStep(1);
-
-    const payload = {
-      name: inputName.value.trim(),
-      email,
-      gender: selectedGender,
-      question: inputQuestion.value.trim(),
-    };
 
     try {
-      const res = await fetch('/api/create-payment', {
+      const res = await fetch('/api/fortune', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          name: inputName.value.trim(),
+          gender: selectedGender,
+          question: inputQuestion.value.trim(),
+        }),
       });
 
       const data = await res.json().catch(() => ({}));
 
       if (generation !== flowGeneration) return;
 
-      if (!res.ok || !data.success || !data.PaymentURL) {
-        throw new Error(data.error || 'Не удалось создать платёж.');
+      if (!res.ok || !data.success || !data.fortune) {
+        throw new Error(data.error || 'Не удалось получить предсказание.');
       }
 
-      activeOrderId = data.orderId;
-      sessionStorage.setItem('raskusi_orderId', data.orderId);
-      trackCheckoutStep(2, data.orderId);
-      trackGoal('pay_redirect', { order_price: ORDER_PRICE_RUB, currency: 'RUB' });
-
-      loaderText.textContent = 'Проверяем транзакцию...';
-      window.location.href = data.PaymentURL;
+      activeOrderId = data.orderId || null;
+      playCrackAndShow(data.fortune, {
+        canRetry: Boolean(data.canRetry),
+        orderId: data.orderId,
+      });
+      trackGoal('fortune_received');
+      trackGoalOnce('fortune_success');
     } catch (err) {
       if (generation !== flowGeneration) return;
-      trackGoal('pay_create_error');
+      trackGoal('fortune_error');
       setStage('form');
       showError(err.message || 'Ошибка сети. Попробуйте позже.');
       btnPay.disabled = false;
-    }
-  }
-
-  async function resumeAfterPayment(orderId) {
-    const generation = ++flowGeneration;
-    activeOrderId = orderId;
-    sessionStorage.removeItem('raskusi_orderId');
-    loaderText.textContent = 'Готовим предсказание...';
-    trackGoalOnce('pay_return');
-    trackGoalOnce('pay_poll_start');
-
-    try {
-      const data = await pollUntilPaid(orderId, generation);
-      if (generation !== flowGeneration) return;
-      playCrackAndShow(data.fortune, {
-        canRetry: Boolean(data.canRetry),
-        orderId: data.orderId || orderId,
-      });
-      trackPurchase(data.orderId || orderId);
-    } catch (err) {
-      if (generation !== flowGeneration) return;
-      trackGoal('pay_poll_error');
-      clearPaymentParams();
-      setStage('form');
-      btnPay.disabled = false;
-      const msg = err?.message || '';
-      if (/не найден|уже использован/i.test(msg)) {
-        clearError();
-        return;
-      }
-      showError(msg || 'Не удалось получить предсказание.');
     }
   }
 
@@ -601,7 +403,7 @@
     clearRetryError();
     const orderId = retryOrderId || sessionStorage.getItem('raskusi_retryOrderId');
     if (!orderId) {
-      showRetryError('Сессия повтора истекла. Оформите новое предсказание.');
+      showRetryError('Сессия повтора истекла. Получите новое предсказание.');
       return;
     }
 
@@ -636,7 +438,6 @@
         throw new Error(data.error || 'Не удалось получить предсказание.');
       }
 
-      // Reset cookie visuals for a fresh crack
       cookieWrap.classList.remove('is-cracking', 'is-revealed', 'is-impact');
       clearCrumbs();
       resetSlipHidden();
@@ -646,6 +447,7 @@
         orderId: data.orderId || orderId,
       });
       trackGoal('retry_success');
+      trackGoal('fortune_received');
     } catch (err) {
       if (generation !== flowGeneration) return;
       stageRetry.classList.remove('hidden');
@@ -659,7 +461,6 @@
 
   function resetToForm() {
     flowGeneration += 1;
-    stopPolling();
     clearCrackTimers();
     activeOrderId = null;
     retryOrderId = null;
@@ -669,19 +470,17 @@
     if (inputConsentPd) inputConsentPd.checked = false;
     inputQuestion.value = '';
     inputRetryQuestion.value = '';
-    sessionStorage.removeItem('raskusi_orderId');
     sessionStorage.removeItem('raskusi_retryOrderId');
     clearError();
     clearRetryError();
     btnPay.disabled = false;
-    clearPaymentParams();
     setStage('form');
   }
 
   btnPay.addEventListener('click', (event) => {
     event.preventDefault();
     if (btnPay.disabled) return;
-    startPayment();
+    requestFortune();
   });
 
   btnAgain.addEventListener('click', (event) => {
@@ -697,7 +496,6 @@
   });
 
   async function init() {
-    // Force HTTPS in production (http→https 301 would turn POST into GET and break payments)
     if (
       window.location.protocol === 'http:' &&
       !/^(localhost|127\.0\.0\.1)$/i.test(window.location.hostname)
@@ -706,22 +504,8 @@
       return;
     }
 
-    // Payment return URLs should not be indexed
-    if (new URLSearchParams(window.location.search).has('orderId')) {
-      let robots = document.querySelector('meta[name="robots"]');
-      if (!robots) {
-        robots = document.createElement('meta');
-        robots.setAttribute('name', 'robots');
-        document.head.appendChild(robots);
-      }
-      robots.setAttribute('content', 'noindex,nofollow');
-    }
-
     try {
       const health = await fetch('/api/health').then((r) => r.json());
-      if (health.demoMode) {
-        demoHint.classList.remove('hidden');
-      }
       if (health.metrikaEnabled && health.metrikaId) {
         metrikaId = health.metrikaId;
       } else {
@@ -733,28 +517,6 @@
 
     setupAnalytics();
     trackGoalOnce('landing');
-
-    const params = new URLSearchParams(window.location.search);
-    const orderId = params.get('orderId');
-    const status = params.get('status');
-    const stored = sessionStorage.getItem('raskusi_orderId');
-
-    if (status === 'fail') {
-      sessionStorage.removeItem('raskusi_orderId');
-      trackGoal('pay_fail');
-      showError('Оплата не завершена. Вы можете попробовать снова.');
-      clearPaymentParams();
-      return;
-    }
-
-    if (orderId && (status === 'success' || !status)) {
-      await resumeAfterPayment(orderId);
-      return;
-    }
-
-    if (stored) {
-      await resumeAfterPayment(stored);
-    }
   }
 
   init();

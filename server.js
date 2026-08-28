@@ -37,11 +37,66 @@ const YANDEX_RSYA_ADS_TXT = (process.env.YANDEX_RSYA_ADS_TXT || '').trim();
 const PAYMENT_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
 const FULFILLED_RETENTION_MS = 72 * 60 * 60 * 1000;
 const PENDING_RETENTION_MS = 60 * 60 * 1000;
+const FREE_MODE = process.env.FREE_MODE !== 'false';
+const FORTUNE_RATE_LIMIT = Math.max(1, Number(process.env.FORTUNE_RATE_LIMIT) || 20);
+const FORTUNE_RATE_WINDOW_MS = 60 * 60 * 1000;
+const fortuneRateByIp = new Map();
+
 const INSECURE_TLS =
   process.env.INSECURE_TLS === 'true' || process.env.NODE_TLS_REJECT_UNAUTHORIZED === '0';
 
 if (INSECURE_TLS) {
   console.warn('WARNING: INSECURE_TLS enabled — outbound TLS verification is disabled');
+}
+
+function getClientIp(req) {
+  const forwarded = req.get('x-forwarded-for');
+  if (forwarded) return forwarded.split(',')[0].trim();
+  return req.socket?.remoteAddress || 'unknown';
+}
+
+function checkFortuneRateLimit(ip) {
+  const now = Date.now();
+  let bucket = fortuneRateByIp.get(ip);
+  if (!bucket || now > bucket.resetAt) {
+    bucket = { count: 0, resetAt: now + FORTUNE_RATE_WINDOW_MS };
+    fortuneRateByIp.set(ip, bucket);
+  }
+  bucket.count += 1;
+  return bucket.count <= FORTUNE_RATE_LIMIT;
+}
+
+async function fulfillFortuneRequest(orderId, userData) {
+  const result = await generateFortune(userData);
+
+  if (isRefusalFortune(result.text)) {
+    saveOrder(orderId, {
+      ...userData,
+      status: 'retry',
+    });
+    return {
+      success: true,
+      fortune: result.text,
+      source: result.source,
+      canRetry: true,
+      orderId,
+    };
+  }
+
+  markOrderFulfilled({
+    orderId,
+    ...userData,
+    fortuneText: result.text,
+    fortuneSource: result.source,
+  });
+
+  return {
+    success: true,
+    fortune: result.text,
+    source: result.source,
+    canRetry: false,
+    orderId,
+  };
 }
 
 const isPlaceholder = (value) =>
@@ -460,8 +515,54 @@ async function generateFortune(userData) {
   }
 }
 
+app.post('/api/fortune', async (req, res) => {
+  try {
+    if (!FREE_MODE) {
+      return res.status(403).json({
+        success: false,
+        error: 'Бесплатный режим отключён. Используйте оплату на сайте.',
+      });
+    }
+
+    const ip = getClientIp(req);
+    if (!checkFortuneRateLimit(ip)) {
+      return res.status(429).json({
+        success: false,
+        error: 'Слишком много запросов с вашего адреса. Попробуйте через час.',
+      });
+    }
+
+    const { name, gender, question } = normalizeFormInput(req.body);
+    const orderId = `raskusi-${Date.now()}-${uuidv4().slice(0, 8)}`;
+    const userData = { name, gender, question, email: '' };
+
+    saveOrder(orderId, {
+      ...userData,
+      status: 'paid',
+      createdAt: Date.now(),
+      free: true,
+    });
+
+    const payload = await fulfillFortuneRequest(orderId, userData);
+    return res.json(payload);
+  } catch (err) {
+    console.error('fortune error:', err);
+    return res.status(500).json({
+      success: false,
+      error: 'Не удалось получить предсказание. Попробуйте позже.',
+    });
+  }
+});
+
 app.post('/api/create-payment', async (req, res) => {
   try {
+    if (FREE_MODE) {
+      return res.status(403).json({
+        success: false,
+        error: 'Оплата отключена. Получите предсказание бесплатно на главной странице.',
+      });
+    }
+
     const { name, gender, question, email } = normalizeFormInput(req.body);
 
     if (RECEIPT_ENABLED && !DEMO_MODE && !email) {
@@ -745,7 +846,7 @@ app.post('/api/retry-fortune', async (req, res) => {
     if (order.status !== 'retry') {
       return res.status(403).json({
         success: false,
-        error: 'Повторный вопрос без оплаты недоступен для этого заказа.',
+        error: 'Повторный вопрос недоступен для этого запроса.',
       });
     }
 
@@ -924,6 +1025,8 @@ app.get('/api/health', (_req, res) => {
   res.json({
     ok: true,
     demoMode: DEMO_MODE,
+    freeMode: FREE_MODE,
+    paymentsEnabled: !FREE_MODE,
     tinkoffMode: TINKOFF_MODE,
     openaiConfigured: AI_ENABLED,
     model: AI_ENABLED ? OPENAI_MODEL : null,
@@ -992,5 +1095,6 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`INSECURE_TLS=${INSECURE_TLS}`);
   console.log(`REFUND_API=${!isPlaceholder(REFUND_ADMIN_KEY)}`);
   console.log(`METRIKA=${YANDEX_METRIKA_ID ? 'on' : 'off'}`);
+  console.log(`FREE_MODE=${FREE_MODE ? 'on' : 'off'}`);
   console.log(`RSYA=${getRsyaBlockIds().length ? getRsyaBlockIds().join(',') : 'off'}`);
 });

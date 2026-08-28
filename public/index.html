@@ -6,7 +6,7 @@
     <title>Раскуси — печенье с предсказанием онлайн | психологическая записка</title>
     <meta
       name="description"
-      content="Раскуси — короткое психологическое предсказание в стиле китайского печенья с запиской. Не магия, а метафора и шаг на день. Оплата через T-Pay."
+      content="Раскуси — короткое психологическое предсказание в стиле китайского печенья с запиской. Не магия, а метафора и шаг на день. Бесплатно."
     />
     <meta
       name="keywords"
@@ -79,7 +79,7 @@
             "brand": { "@type": "Brand", "name": "Раскуси" },
             "offers": {
               "@type": "Offer",
-              "price": "29",
+              "price": "0",
               "priceCurrency": "RUB",
               "availability": "https://schema.org/InStock",
               "url": "{{BASE_URL}}/"
@@ -98,10 +98,10 @@
               },
               {
                 "@type": "Question",
-                "name": "Как оплатить предсказание?",
+                "name": "Сколько стоит предсказание?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "Оплата проходит через T-Pay или банковскую карту. Доступ к записке открывается после подтверждения платежа."
+                  "text": "Сервис бесплатный. Укажите имя, пол и вопрос по желанию, отметьте согласие на персонализацию и нажмите «Раскусить»."
                 }
               },
               {
@@ -109,7 +109,7 @@
                 "name": "Нужно ли обязательно задавать вопрос?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "Имя, пол и вопрос необязательны. Email нужен, чтобы отправить кассовый чек. Если вопрос пустой — универсальная записка."
+                  "text": "Имя, пол и вопрос необязательны. Если вопрос пустой — универсальная записка."
                 }
               },
               {
@@ -411,20 +411,6 @@
 
           <p id="form-error" class="hidden text-sm text-red-300/90 text-center" role="alert"></p>
 
-          <label class="block">
-            <span class="sr-only">Email для чека</span>
-            <input
-              id="input-email"
-              type="email"
-              name="email"
-              autocomplete="email"
-              maxlength="64"
-              required
-              placeholder="Email для чека"
-              class="field-line w-full bg-transparent border-0 border-b border-white/20 focus:border-sand outline-none py-3 text-sm text-white/90 placeholder:text-white/30 transition-colors"
-            />
-          </label>
-
           <label class="consent-row" for="input-consent-pd">
             <input
               id="input-consent-pd"
@@ -444,20 +430,16 @@
           <button
             id="btn-pay"
             type="button"
-            data-metrika-goal="pay_click"
+            data-metrika-goal="fortune_request"
             class="btn-gold relative z-20 w-full py-4 px-6 text-sm sm:text-[15px] font-medium tracking-wide text-ink bg-sand hover:bg-sand-light disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Раскусить за 29 ₽ через T-Pay
+            Раскусить
           </button>
 
           <p class="pay-legal-note">
-            Нажимая «Оплатить 29&nbsp;₽», вы принимаете условия
-            <a href="/offer.html">Публичной оферты</a> и подтверждаете ознакомление с
-            <a href="/privacy.html">Политикой обработки персональных данных</a>.
-          </p>
-
-          <p id="demo-hint" class="hidden text-center text-[11px] text-white/25 tracking-wide">
-            Демо-режим: оплата симулируется без реального списания
+            Нажимая «Раскусить», вы подтверждаете ознакомление с
+            <a href="/privacy.html">Политикой обработки персональных данных</a> и даёте согласие на
+            персонализацию результата.
           </p>
         </section>
 
@@ -481,7 +463,7 @@
 
         <section id="stage-retry" class="hidden relative z-20 w-full max-w-md mx-auto mt-8 sm:mt-10 space-y-5 stage-panel">
           <p class="text-center text-sm text-white/45 leading-relaxed">
-            Оплата сохранена. Переформулируйте вопрос — новое предсказание без повторной оплаты.
+            Переформулируйте вопрос — новое предсказание без ограничений по оплате.
           </p>
           <label class="block">
             <span class="sr-only">Новый вопрос</span>
@@ -531,11 +513,11 @@
             <ol class="seo-steps">
               <li>
                 <strong>Сформулируйте запрос</strong>
-                <span>Email нужен для чека. Имя, пол и вопрос необязательны — можно получить случайную записку.</span>
+                <span>Имя, пол и вопрос необязательны — можно получить случайную записку.</span>
               </li>
               <li>
-                <strong>Оплатите через T-Pay</strong>
-                <span>Доступ открывается только после успешной оплаты картой или T-Pay.</span>
+                <strong>Нажмите «Раскусить»</strong>
+                <span>Бесплатно. Нужно только согласие на персонализацию, если указываете контекст.</span>
               </li>
               <li>
                 <strong>Раскусите печенье</strong>
@@ -556,8 +538,7 @@
               ёмкую метафору и конкретный ориентир, который помогает посмотреть на ситуацию иначе.
             </p>
             <p>
-              Один ответ — осознанный микроплатёж: меньше импульсивных кликов, больше внимания к
-              формулировке вопроса.
+              Один ответ — короткая пауза и внимание к формулировке вопроса. Сервис бесплатный.
             </p>
           </div>
         </section>
@@ -567,10 +548,10 @@
             <h2 id="faq-title">Частые вопросы</h2>
             <div class="faq-list">
               <details class="faq-item">
-                <summary>Как оплатить предсказание?</summary>
+                <summary>Сколько стоит предсказание?</summary>
                 <p>
-                  Через интернет-эквайринг Т-Банка: T-Pay или банковская карта. Текст открывается
-                  только после подтверждения платежа. Цена указана на кнопке оплаты.
+                  Бесплатно. Заполните форму по желанию, отметьте согласие на персонализацию и нажмите
+                  «Раскусить».
                 </p>
               </details>
               <details class="faq-item">
@@ -591,22 +572,13 @@
                 <summary>Что если печенье не сможет ответить?</summary>
                 <p>
                   На опасные или деструктивные запросы сервис отказывает в содержательном ответе.
-                  Вы можете переформулировать вопрос без повторной оплаты.
+                  Вы можете переформулировать вопрос и попробовать снова.
                 </p>
               </details>
               <details class="faq-item">
-                <summary>Закрыл страницу после оплаты — что делать?</summary>
+                <summary>Закрыл страницу — что делать?</summary>
                 <p>
-                  Вернитесь по ссылке из адресной строки после оплаты (в ней есть номер заказа) или
-                  откройте сайт снова — если оплата прошла, записка подтянется автоматически в
-                  течение 72 часов.
-                </p>
-              </details>
-              <details class="faq-item">
-                <summary>Как проходит оплата?</summary>
-                <p>
-                  Через интернет-эквайринг Т-Банка: T-Pay или банковская карта. Текст открывается
-                  только после подтверждения платежа.
+                  Откройте сайт снова и получите новое предсказание — сервис бесплатный.
                 </p>
               </details>
             </div>
