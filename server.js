@@ -31,8 +31,9 @@ const RECEIPT_TAX = process.env.RECEIPT_TAX || 'none';
 const RECEIPT_ITEM_NAME = process.env.RECEIPT_ITEM_NAME || 'Предсказание Раскуси';
 const REFUND_ADMIN_KEY = process.env.REFUND_ADMIN_KEY || '';
 const YANDEX_METRIKA_ID = (process.env.YANDEX_METRIKA_ID || '112027032').trim();
+const YANDEX_RSYA_ENABLED = process.env.YANDEX_RSYA_ENABLED === 'true';
 const YANDEX_RSYA_BLOCK_CONTENT = (process.env.YANDEX_RSYA_BLOCK_CONTENT || '').trim();
-const YANDEX_RSYA_BLOCK_FOOTER = (process.env.YANDEX_RSYA_BLOCK_FOOTER || 'R-A-19829197-1').trim();
+const YANDEX_RSYA_BLOCK_FOOTER = (process.env.YANDEX_RSYA_BLOCK_FOOTER || '').trim();
 const YANDEX_RSYA_ADS_TXT = (process.env.YANDEX_RSYA_ADS_TXT || '').trim();
 const PAYMENT_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
 const FULFILLED_RETENTION_MS = 72 * 60 * 60 * 1000;
@@ -249,6 +250,7 @@ function isValidRsyaBlockId(blockId) {
 }
 
 function getRsyaBlockIds() {
+  if (!YANDEX_RSYA_ENABLED) return [];
   return [YANDEX_RSYA_BLOCK_CONTENT, YANDEX_RSYA_BLOCK_FOOTER].filter(isValidRsyaBlockId);
 }
 
@@ -344,10 +346,24 @@ app.get('/sitemap.xml', (_req, res) => {
   res.type('application/xml').send(renderPublic('sitemap.xml'));
 });
 
-app.get(['/', '/index.html'], (_req, res) => sendPublicHtml(res, 'index.html'));
-app.get('/offer.html', (_req, res) => sendPublicHtml(res, 'offer.html'));
-app.get('/privacy.html', (_req, res) => sendPublicHtml(res, 'privacy.html'));
-app.get('/consent-pd.html', (_req, res) => sendPublicHtml(res, 'consent-pd.html'));
+const PUBLIC_HTML_ROUTES = {
+  'index.html': ['/', '/index.html'],
+  'offer.html': ['/offer.html'],
+  'privacy.html': ['/privacy.html'],
+  'consent-pd.html': ['/consent-pd.html'],
+  'about.html': ['/about.html'],
+  'contacts.html': ['/contacts.html'],
+  'articles/index.html': ['/articles/', '/articles/index.html'],
+  'articles/metaphor-dlya-sebya.html': ['/articles/metaphor-dlya-sebya.html'],
+  'articles/kak-formulirovat-vopros.html': ['/articles/kak-formulirovat-vopros.html'],
+  'articles/psihologiya-sluchaynosti.html': ['/articles/psihologiya-sluchaynosti.html'],
+};
+
+for (const [fileName, routes] of Object.entries(PUBLIC_HTML_ROUTES)) {
+  for (const route of routes) {
+    app.get(route, (_req, res) => sendPublicHtml(res, fileName));
+  }
+}
 
 app.use(express.static(path.join(__dirname, 'public'), { index: false }));
 
@@ -1040,7 +1056,8 @@ app.get('/api/health', (_req, res) => {
     refundApiEnabled: !isPlaceholder(REFUND_ADMIN_KEY),
     metrikaEnabled: Boolean(YANDEX_METRIKA_ID),
     metrikaId: YANDEX_METRIKA_ID || null,
-    rsyaEnabled: getRsyaBlockIds().length > 0,
+    rsyaEnabled: YANDEX_RSYA_ENABLED && getRsyaBlockIds().length > 0,
+    rsyaConfigured: YANDEX_RSYA_ENABLED,
     rsyaBlocks: {
       content: isValidRsyaBlockId(YANDEX_RSYA_BLOCK_CONTENT) ? YANDEX_RSYA_BLOCK_CONTENT : null,
       footer: isValidRsyaBlockId(YANDEX_RSYA_BLOCK_FOOTER) ? YANDEX_RSYA_BLOCK_FOOTER : null,
