@@ -70,20 +70,33 @@
             "name": "Раскуси",
             "alternateName": "Raskusi",
             "url": "{{BASE_URL}}/",
-            "logo": "{{BASE_URL}}/favicon.svg"
+            "logo": {
+              "@type": "ImageObject",
+              "url": "{{BASE_URL}}/favicon.svg"
+            }
           },
           {
-            "@type": "Product",
-            "name": "Предсказание Раскуси",
-            "description": "Одно лаконичное психологическое предсказание-записка бесплатно онлайн.",
-            "brand": { "@type": "Brand", "name": "Раскуси" },
+            "@type": "WebApplication",
+            "@id": "{{BASE_URL}}/#app",
+            "name": "Раскуси",
+            "url": "{{BASE_URL}}/",
+            "description": "Бесплатный онлайн-сервис коротких психологических предсказаний-записок в формате китайского печенья.",
+            "applicationCategory": "LifestyleApplication",
+            "operatingSystem": "Any",
+            "image": {
+              "@type": "ImageObject",
+              "url": "{{BASE_URL}}/og-image.svg",
+              "width": 1200,
+              "height": 630
+            },
             "offers": {
               "@type": "Offer",
               "price": "0",
               "priceCurrency": "RUB",
               "availability": "https://schema.org/InStock",
               "url": "{{BASE_URL}}/"
-            }
+            },
+            "provider": { "@id": "{{BASE_URL}}/#organization" }
           },
           {
             "@type": "FAQPage",
