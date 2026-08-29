@@ -304,6 +304,18 @@ app.use(cors());
 app.use(express.json({ limit: '100kb' }));
 app.use(express.urlencoded({ extended: true }));
 
+app.set('trust proxy', 1);
+
+if (process.env.FORCE_HTTPS === 'true') {
+  app.use((req, res, next) => {
+    const proto = req.get('x-forwarded-proto');
+    if (proto && proto !== 'https') {
+      return res.redirect(301, `https://${req.get('host')}${req.originalUrl}`);
+    }
+    next();
+  });
+}
+
 function renderPublic(fileName) {
   const filePath = path.join(__dirname, 'public', fileName);
   return fs
@@ -344,6 +356,10 @@ app.get('/ads.txt', (_req, res) => {
 
 app.get('/sitemap.xml', (_req, res) => {
   res.type('application/xml').send(renderPublic('sitemap.xml'));
+});
+
+app.get('/favicon.ico', (_req, res) => {
+  res.type('image/x-icon').sendFile(path.join(__dirname, 'public', 'favicon.ico'));
 });
 
 const PUBLIC_HTML_ROUTES = {

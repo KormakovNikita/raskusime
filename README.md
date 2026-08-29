@@ -213,7 +213,7 @@ YANDEX_RSYA_ADS_TXT=yandex.com, ВАШ_ID, DIRECT, f08c47fec0942fa0
 - `robots.txt`, `sitemap.xml` (подставляют `BASE_URL`)
 - страницы `/offer.html` и `/privacy.html`
 - `noindex` для демо-оплаты и URL с `orderId`
-- favicon.svg
+- favicon.svg, favicon.ico, apple-touch-icon.png
 
 ## SEO — чеклист: домен и вебмастеры
 
@@ -288,6 +288,21 @@ YANDEX_RSYA_ADS_TXT=yandex.com, ВАШ_ID, DIRECT, f08c47fec0942fa0
 3. Готовы ли реквизиты для оферты/политики  
 
 После этого можно переходить к **этапу 2 SEO в коде** (скорость: убрать Tailwind CDN, шрифты) и OG-картинке 1200×630.
+
+### E. Яндекс.Вебмастер — типичные предупреждения
+
+| Предупреждение | Причина | Решение |
+|----------------|---------|---------|
+| **Файл favicon не найден** | Робот запрашивает `/favicon.ico`, а отдавалась HTML-страница | После деплоя проверьте `https://raskusime.ru/favicon.ico` — должен быть файл иконки, не HTML. В Вебмастере → «Переобход страниц» → главная |
+| **Нет HTTPS** | Сайт добавлен как `http://` или не выбрано HTTPS-зеркало | HTTPS уже работает; в Вебмастере укажите **главное зеркало** `https://raskusime.ru`. На VPS: `sudo bash scripts/setup-nginx-https.sh` |
+| **Sitemap не используется** | Карта не добавлена вручную или ещё в очереди | Вебмастер → **Индексирование** → **Файлы Sitemap** → добавить `https://raskusime.ru/sitemap.xml` |
+
+После деплоя:
+
+```bash
+curl -I https://raskusime.ru/favicon.ico   # Content-Type: image/x-icon
+curl -s https://raskusime.ru/robots.txt    # Sitemap: https://raskusime.ru/sitemap.xml
+```
 
 ## SEO — позже
 
